@@ -1,0 +1,66 @@
+{
+    "name": "@contentgrowth/content-auth",
+    "version": "0.0.1",
+    "description": "Better Auth wrapper with UI components for Cloudflare Workers & Pages",
+    "type": "module",
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        },
+        "./backend": {
+            "types": "./dist/backend/index.d.ts",
+            "import": "./dist/backend/index.js"
+        },
+        "./frontend": {
+            "types": "./dist/frontend/index.d.ts",
+            "import": "./dist/frontend/index.js"
+        },
+        "./client": {
+            "types": "./dist/frontend/client.d.ts",
+            "import": "./dist/frontend/client.js"
+        }
+    },
+    "files": [
+        "dist",
+        "README.md",
+        "LICENSE"
+    ],
+    "scripts": {
+        "build": "tsup && cp src/styles.css dist/styles.css",
+        "dev": "tsup --watch",
+        "prepublishOnly": "npm run build"
+    },
+    "keywords": [
+        "auth",
+        "better-auth",
+        "cloudflare",
+        "workers",
+        "pages",
+        "react"
+    ],
+    "author": "Content Growth",
+    "license": "MIT",
+    "peerDependencies": {
+        "react": "^18.0.0",
+        "react-dom": "^18.0.0"
+    },
+    "dependencies": {
+        "better-auth": "^1.0.0",
+        "drizzle-orm": "^0.30.0",
+        "hono": "^4.0.0"
+    },
+    "devDependencies": {
+        "@cloudflare/workers-types": "^4.20240101.0",
+        "@types/node": "^20.0.0",
+        "@types/react": "^18.0.0",
+        "@types/react-dom": "^18.0.0",
+        "react": "^18.0.0",
+        "react-dom": "^18.0.0",
+        "tsup": "^8.0.0",
+        "typescript": "^5.0.0"
+    }
+}
