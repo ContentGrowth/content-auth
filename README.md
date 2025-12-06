@@ -63,6 +63,31 @@ export default app;
 | `provider` | `'sqlite'` \| `'postgres'` \| `'mysql'` | (Optional) Database provider. Defaults to `'sqlite'` (for D1). |
 | `...` | `BetterAuthOptions` | Any other [Better Auth configuration](https://better-auth.com/docs/configuration) options. |
 
+### Using without Hono (Standard Cloudflare Worker)
+
+If you are not using Hono, you can use the `createAuth` function directly in your `fetch` handler.
+
+```typescript
+import { createAuth } from '@contentgrowth/content-auth/backend';
+
+export default {
+  async fetch(request, env, ctx) {
+    const auth = createAuth({
+      database: env.DB,
+      secret: env.BETTER_AUTH_SECRET,
+      baseUrl: env.BASE_URL
+    });
+
+    // Manually handle the auth routes
+    if (request.url.includes("/api/auth")) {
+      return auth.handler(request);
+    }
+
+    return new Response("Hello World");
+  }
+}
+```
+
 ### Using with Other Databases (Postgres/MySQL)
 
 You can use this package with any database supported by Drizzle ORM (Postgres, MySQL, etc.) on any platform (Node.js, Bun, etc.).
