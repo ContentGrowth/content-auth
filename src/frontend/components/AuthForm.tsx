@@ -7,10 +7,11 @@ interface AuthFormProps {
     className?: string;
 }
 
-export const AuthForm: React.FC<AuthFormProps> = ({
+export const AuthForm: React.FC<AuthFormProps & { socialProviders?: string[] }> = ({
     client = authClient,
     onSuccess,
-    className
+    className,
+    socialProviders = []
 }) => {
     const [isLogin, setIsLogin] = useState(true);
     const [email, setEmail] = useState('');
@@ -47,9 +48,42 @@ export const AuthForm: React.FC<AuthFormProps> = ({
         }
     };
 
+    const handleSocialLogin = async (provider: string) => {
+        setLoading(true);
+        try {
+            await client.signIn.social({
+                provider: provider as any,
+                callbackURL: window.location.href // Redirect back to current page
+            });
+            // Note: Social login usually redirects, so onSuccess might not be hit immediately here
+        } catch (err: any) {
+            setError(err.message || `Failed to sign in with ${provider}`);
+            setLoading(false);
+        }
+    };
+
     return (
         <div className={`ca-container ${className || ''}`}>
             <h2 className="ca-title">{isLogin ? 'Welcome Back' : 'Create Account'}</h2>
+
+            {socialProviders.length > 0 && (
+                <div className="ca-social-buttons">
+                    {socialProviders.map(provider => (
+                        <button
+                            key={provider}
+                            type="button"
+                            className="ca-button ca-button-outline"
+                            onClick={() => handleSocialLogin(provider)}
+                            disabled={loading}
+                        >
+                            Continue with {provider.charAt(0).toUpperCase() + provider.slice(1)}
+                        </button>
+                    ))}
+                    <div className="ca-divider">
+                        <span>Or continue with email</span>
+                    </div>
+                </div>
+            )}
 
             <form onSubmit={handleSubmit} className="ca-form">
                 {!isLogin && (

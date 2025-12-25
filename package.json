@@ -6,6 +6,9 @@
     "main": "./dist/index.js",
     "module": "./dist/index.js",
     "types": "./dist/index.d.ts",
+    "bin": {
+        "content-auth": "./dist/cli.js"
+    },
     "exports": {
         ".": {
             "types": "./dist/index.d.ts",
@@ -22,7 +25,8 @@
         "./client": {
             "types": "./dist/frontend/client.d.ts",
             "import": "./dist/frontend/client.js"
-        }
+        },
+        "./styles.css": "./dist/styles.css"
     },
     "files": [
         "dist",
@@ -50,7 +54,8 @@
     },
     "dependencies": {
         "better-auth": "^1.0.0",
-        "drizzle-orm": "^0.30.0",
+        "cac": "^6.0.0",
+        "drizzle-orm": "^0.45.0",
         "hono": "^4.0.0"
     },
     "devDependencies": {

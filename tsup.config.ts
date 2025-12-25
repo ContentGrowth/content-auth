@@ -5,7 +5,8 @@ export default defineConfig({
         'src/index.ts',
         'src/backend/index.ts',
         'src/frontend/index.ts',
-        'src/frontend/client.ts'
+        'src/frontend/client.ts',
+        'src/cli.ts'
     ],
     format: ['esm'],
     dts: true,

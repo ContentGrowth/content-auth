@@ -1,21 +1,47 @@
 import { Hono } from 'hono';
+import type { D1Database } from '@cloudflare/workers-types';
 import { createAuthApp } from '@contentgrowth/content-auth/backend';
+import { organization } from 'better-auth/plugins';
 import { AuthForm } from '@contentgrowth/content-auth/frontend';
 import { renderToString } from 'react-dom/server';
 import React from 'react';
 
-const app = new Hono();
+type Bindings = {
+    DB: D1Database;
+    BETTER_AUTH_SECRET: string;
+    BASE_URL: string;
+    GOOGLE_CLIENT_ID: string;
+    GOOGLE_CLIENT_SECRET: string;
+    GITHUB_CLIENT_ID: string;
+    GITHUB_CLIENT_SECRET: string;
+};
 
-// Mock D1 database for example
-const mockDb = {} as any;
+const app = new Hono<{ Bindings: Bindings }>();
 
-const { app: authApp } = createAuthApp({
-    database: mockDb,
-    secret: 'test-secret',
-    baseUrl: 'http://localhost:5173'
+app.on(['POST', 'GET'], '/api/auth/*', (c) => {
+    const { auth } = createAuthApp({
+        database: c.env.DB,
+        secret: c.env.BETTER_AUTH_SECRET,
+        baseUrl: c.env.BASE_URL || `http://localhost:${process.env.PORT || '5173'}`,
+        emailAndPassword: {
+            enabled: true
+        },
+        socialProviders: {
+            google: {
+                clientId: c.env.GOOGLE_CLIENT_ID || "",
+                clientSecret: c.env.GOOGLE_CLIENT_SECRET || ""
+            },
+            github: {
+                clientId: c.env.GITHUB_CLIENT_ID || "",
+                clientSecret: c.env.GITHUB_CLIENT_SECRET || ""
+            }
+        },
+        plugins: [
+            organization()
+        ]
+    });
+    return auth.handler(c.req.raw);
 });
-
-app.route('/', authApp);
 
 app.get('/', (c) => {
     const html = renderToString(
@@ -23,7 +49,7 @@ app.get('/', (c) => {
             <head>
                 <title>Content Auth Example</title>
                 <link rel="stylesheet" href="/styles.css" />
-                <script type="module" src="/client.js"></script>
+                <script type="module" src="/src/client.tsx"></script>
             </head>
             <body>
                 <div id="root">

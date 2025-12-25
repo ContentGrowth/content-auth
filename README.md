@@ -13,11 +13,11 @@ A wrapper around [Better Auth](https://better-auth.com) designed specifically fo
 ## Installation
 
 ```bash
-npm install @contentgrowth/content-auth better-auth drizzle-orm hono
+npm install @contentgrowth/content-auth
 # or
-yarn add @contentgrowth/content-auth better-auth drizzle-orm hono
+yarn add @contentgrowth/content-auth
 # or
-pnpm add @contentgrowth/content-auth better-auth drizzle-orm hono
+pnpm add @contentgrowth/content-auth
 ```
 
 ## Usage
@@ -28,8 +28,7 @@ Create your authentication API using the `createAuthApp` helper. This sets up th
 
 ```typescript
 // src/index.ts
-import { Hono } from 'hono';
-import { createAuthApp } from '@contentgrowth/content-auth/backend';
+import { Hono, createAuthApp } from '@contentgrowth/content-auth/backend';
 
 type Bindings = {
   DB: D1Database;
