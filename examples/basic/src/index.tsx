@@ -48,7 +48,6 @@ app.get('/', (c) => {
         <html>
             <head>
                 <title>Content Auth Example</title>
-                <link rel="stylesheet" href="/styles.css" />
                 <script type="module" src="/src/client.tsx"></script>
             </head>
             <body>

@@ -1,25 +1,27 @@
 .ca-container {
-  font-family: system-ui, -apple-system, sans-serif;
-  max-width: 400px;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  max-width: 420px;
   margin: 0 auto;
-  padding: 2rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  padding: 2.5rem;
+  border-radius: 16px;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
   background-color: white;
+  border: 1px solid #f3f4f6;
 }
 
 .ca-title {
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   font-weight: 700;
   text-align: center;
-  margin-bottom: 1.5rem;
-  color: #1a1a1a;
+  margin-bottom: 2rem;
+  color: #111827;
+  letter-spacing: -0.025em;
 }
 
 .ca-form {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.25rem;
 }
 
 .ca-input-group {
@@ -31,45 +33,113 @@
 .ca-label {
   font-size: 0.875rem;
   font-weight: 500;
-  color: #4b5563;
+  color: #374151;
 }
 
 .ca-input {
-  padding: 0.75rem;
-  border-radius: 6px;
-  border: 1px solid #d1d5db;
-  font-size: 1rem;
-  transition: border-color 0.2s;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  background-color: #f9fafb;
 }
 
 .ca-input:focus {
   outline: none;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  border-color: #3b82f6;
+  background-color: white;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
 }
 
 .ca-button {
-  background-color: #2563eb;
-  color: white;
-  padding: 0.75rem;
-  border-radius: 6px;
-  border: none;
-  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font-weight: 500;
+  font-size: 0.95rem;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
+  gap: 0.5rem;
 }
 
-.ca-button:hover {
-  background-color: #1d4ed8;
+.ca-button-primary,
+button[type="submit"] {
+  background-color: #111827;
+  color: white;
+  border: 1px solid #111827;
 }
 
-.ca-button:disabled {
+button[type="submit"]:hover {
+  background-color: #1f2937;
+  border-color: #1f2937;
+  transform: translateY(-1px);
+}
+
+.ca-button-submit:disabled,
+button[type="submit"]:disabled {
   background-color: #9ca3af;
+  border-color: #9ca3af;
   cursor: not-allowed;
+  transform: none;
+}
+
+/* Social Buttons */
+.ca-social-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.ca-button-social {
+  background-color: white;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+  padding: 0.625rem 1rem;
+  font-weight: 500;
+}
+
+.ca-button-social:hover {
+  background-color: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.ca-icon {
+  flex-shrink: 0;
+}
+
+/* Divider */
+.ca-divider {
+  position: relative;
+  text-align: center;
+  margin: 1.5rem 0;
+}
+
+.ca-divider::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background-color: #e5e7eb;
+}
+
+.ca-divider-text {
+  position: relative;
+  background-color: white;
+  padding: 0 0.75rem;
+  color: #6b7280;
+  font-size: 0.875rem;
+  font-weight: 400;
 }
 
 .ca-footer {
-  margin-top: 1.5rem;
+  margin-top: 2rem;
   text-align: center;
   font-size: 0.875rem;
   color: #6b7280;
@@ -83,15 +153,20 @@
   border: none;
   padding: 0;
   font: inherit;
+  font-weight: 500;
 }
 
 .ca-link:hover {
   text-decoration: underline;
+  color: #1d4ed8;
 }
 
 .ca-error {
-  color: #dc2626;
+  background-color: #fef2f2;
+  color: #ef4444;
   font-size: 0.875rem;
-  margin-top: 0.5rem;
+  padding: 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #fee2e2;
   text-align: center;
 }
