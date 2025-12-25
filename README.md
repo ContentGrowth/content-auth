@@ -164,9 +164,91 @@ await authClient.signIn.email({
 
 ## Database Setup
 
-This package uses **Drizzle ORM** with **Cloudflare D1**. You will need to run the Better Auth migrations to set up your database schema.
+This package requires specific database tables to function. We provide a **SQL schema template** that you copy into your project and extend with your own tables.
 
-Refer to the [Better Auth Drizzle Adapter documentation](https://better-auth.com/docs/adapters/drizzle) for schema details.
+### Step 1: Initialize the Schema
+
+Use the CLI to initialize the schema in your project:
+
+```bash
+npx content-auth init
+```
+
+This creates `./migrations/0000_auth.sql` with all required auth tables.
+
+**Options:**
+- `-o, --output <path>` — Custom output path (default: `./migrations/0000_auth.sql`)
+- `--force` — Overwrite existing file
+
+```bash
+# Example: Custom output path
+npx content-auth init -o ./db/migrations/0001_auth.sql
+```
+
+### Step 2: Add Your Application Tables
+
+Edit the copied file and add your application-specific tables at the bottom:
+
+```sql
+-- ... (auth tables from template above) ...
+
+-- ==========================================
+-- YOUR APPLICATION TABLES
+-- ==========================================
+
+CREATE TABLE IF NOT EXISTS my_entity (
+    id TEXT PRIMARY KEY,
+    org_id TEXT NOT NULL,  -- References organization.id
+    name TEXT NOT NULL,
+    created_at INTEGER
+);
+```
+
+### Step 3: Run Migrations
+
+```bash
+# For Cloudflare D1 (local)
+wrangler d1 migrations apply DB --local
+
+# For Cloudflare D1 (remote)
+wrangler d1 migrations apply DB --remote
+```
+
+### Extending Auth Tables
+
+You can add extra columns to any auth table for your business needs. Just ensure you **keep all existing columns** — they are required by Better Auth.
+
+```sql
+-- Example: Adding custom fields to organization
+CREATE TABLE IF NOT EXISTS organization (
+    -- Required columns (keep these)
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    slug TEXT UNIQUE,
+    logo TEXT,
+    createdAt TIMESTAMP NOT NULL,
+    metadata TEXT,
+    
+    -- Your custom columns
+    domain TEXT,
+    is_verified BOOLEAN DEFAULT FALSE,
+    billing_tier TEXT DEFAULT 'free'
+);
+```
+
+### Schema Reference
+
+| Table | Purpose |
+|-------|---------|
+| `user` | User accounts |
+| `session` | Active sessions |
+| `account` | OAuth/credential providers |
+| `verification` | Email/token verification |
+| `organization` | Teams/orgs (org plugin) |
+| `member` | Org membership (org plugin) |
+| `invitation` | Pending invites (org plugin) |
+
+For detailed field definitions, see `schema/auth.sql` or the [Better Auth Drizzle Adapter documentation](https://better-auth.com/docs/adapters/drizzle).
 
 ## License
 
