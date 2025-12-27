@@ -139,6 +139,14 @@ button[type="submit"]:disabled {
   font-weight: 400;
 }
 
+.ca-social-header {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
 .ca-footer {
   margin-top: 2rem;
   text-align: center;

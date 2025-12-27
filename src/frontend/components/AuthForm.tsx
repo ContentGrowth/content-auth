@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { authClient } from '../client';
 
 interface AuthFormProps {
+    view?: 'signin' | 'signup';
     client?: typeof authClient;
     onSuccess?: () => void;
     className?: string;
@@ -11,7 +12,7 @@ interface AuthFormProps {
     width?: 'default' | 'compact' | 'wide';
     layout?: 'default' | 'split';
     socialPosition?: 'top' | 'bottom';
-    view?: 'signin' | 'signup';
+    onSwitchMode?: () => void;
 }
 
 export const AuthForm: React.FC<AuthFormProps> = ({
@@ -24,7 +25,8 @@ export const AuthForm: React.FC<AuthFormProps> = ({
     width = 'default',
     layout = 'default',
     socialPosition = 'top',
-    view
+    view,
+    onSwitchMode
 }) => {
     const [isLogin, setIsLogin] = useState(view !== 'signup');
     const [email, setEmail] = useState('');
@@ -32,6 +34,13 @@ export const AuthForm: React.FC<AuthFormProps> = ({
     const [name, setName] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    const [mounted, setMounted] = useState(false);
+
+    React.useEffect(() => {
+        setMounted(true);
+        setIsLogin(view !== 'signup');
+    }, [view]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -76,13 +85,10 @@ export const AuthForm: React.FC<AuthFormProps> = ({
 
     const socialClass = socialLayout === 'column' ? 'ca-social-column' : 'ca-social-grid';
 
-    // Map width prop to class. 'default' and 'wide' mapped to new system or kept as fallbacks if needed.
-    // Assuming 'wide' mapped to 'max' logic or just keeping 'ca-container-wide' separation if legacy.
-    // For split layout, strictly use the new classes.
     let widthClass = '';
     if (width === 'compact') widthClass = 'ca-width-compact';
     else if (width === 'wide') widthClass = 'ca-width-wide';
-    else widthClass = 'ca-width-default'; // default for split
+    else widthClass = 'ca-width-default';
 
     const containerClass = `ca-container ${layout === 'split' ? 'ca-layout-split' : ''} ${widthClass} ${className || ''}`;
 
@@ -112,60 +118,79 @@ export const AuthForm: React.FC<AuthFormProps> = ({
         )
     );
 
-    const renderForm = () => (
-        <form onSubmit={handleSubmit} className="ca-form">
-            {!isLogin && (
+    const renderForm = () => {
+        if (!mounted) {
+            return (
+                <div className="ca-form">
+                    <div className="ca-input-group" style={{ opacity: 0 }}>
+                        <label className="ca-label">Loading</label>
+                        <input className="ca-input" disabled />
+                    </div>
+                </div>
+            );
+        }
+
+        return (
+            <form onSubmit={handleSubmit} className="ca-form">
+                {!isLogin && (
+                    <div className="ca-input-group">
+                        <label className="ca-label" htmlFor="name">Name</label>
+                        <input
+                            id="name"
+                            type="text"
+                            className="ca-input"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            required
+                        />
+                    </div>
+                )}
+
                 <div className="ca-input-group">
-                    <label className="ca-label" htmlFor="name">Name</label>
+                    <label className="ca-label" htmlFor="email">Email</label>
                     <input
-                        id="name"
-                        type="text"
+                        id="email"
+                        type="email"
                         className="ca-input"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
                         required
                     />
                 </div>
-            )}
 
-            <div className="ca-input-group">
-                <label className="ca-label" htmlFor="email">Email</label>
-                <input
-                    id="email"
-                    type="email"
-                    className="ca-input"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                />
-            </div>
+                <div className="ca-input-group">
+                    <label className="ca-label" htmlFor="password">Password</label>
+                    <input
+                        id="password"
+                        type="password"
+                        className="ca-input"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                    />
+                </div>
 
-            <div className="ca-input-group">
-                <label className="ca-label" htmlFor="password">Password</label>
-                <input
-                    id="password"
-                    type="password"
-                    className="ca-input"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                />
-            </div>
+                {error && <div className="ca-error">{error}</div>}
 
-            {error && <div className="ca-error">{error}</div>}
-
-            <button type="submit" className="ca-button" disabled={loading}>
-                {loading ? 'Loading...' : (isLogin ? 'Sign In' : 'Sign Up')}
-            </button>
-        </form>
-    );
+                <button type="submit" className="ca-button" disabled={loading}>
+                    {loading ? 'Loading...' : (isLogin ? 'Sign In' : 'Sign Up')}
+                </button>
+            </form>
+        );
+    };
 
     const renderFooter = () => (
         <div className="ca-footer">
             {isLogin ? "Don't have an account? " : "Already have an account? "}
             <button
                 className="ca-link"
-                onClick={() => setIsLogin(!isLogin)}
+                onClick={() => {
+                    if (onSwitchMode) {
+                        onSwitchMode();
+                    } else {
+                        setIsLogin(!isLogin);
+                    }
+                }}
                 type="button"
             >
                 {isLogin ? 'Sign up' : 'Sign in'}
@@ -194,6 +219,9 @@ export const AuthForm: React.FC<AuthFormProps> = ({
                                 <span className="ca-split-divider-text">Or</span>
                             </div>
                             <div className="ca-split-social">
+                                <h3 className="ca-social-header">
+                                    {isLogin ? 'Sign In With' : 'Sign Up With'}
+                                </h3>
                                 {renderSocials()}
                             </div>
                         </>
