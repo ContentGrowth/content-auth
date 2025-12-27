@@ -11,6 +11,7 @@ interface AuthFormProps {
     width?: 'default' | 'wide';
     layout?: 'default' | 'split';
     socialPosition?: 'top' | 'bottom';
+    view?: 'signin' | 'signup';
 }
 
 export const AuthForm: React.FC<AuthFormProps> = ({
@@ -22,9 +23,10 @@ export const AuthForm: React.FC<AuthFormProps> = ({
     title,
     width = 'default',
     layout = 'default',
-    socialPosition = 'top'
+    socialPosition = 'top',
+    view
 }) => {
-    const [isLogin, setIsLogin] = useState(true);
+    const [isLogin, setIsLogin] = useState(view !== 'signup');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [name, setName] = useState('');
