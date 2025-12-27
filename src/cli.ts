@@ -27,7 +27,7 @@ cli
             // Find the schema file relative to the CLI location
             // When installed, __dirname is in dist/, schema is in schema/
             const schemaPath = join(__dirname, '..', 'schema', 'auth.sql');
-            
+
             if (!existsSync(schemaPath)) {
                 console.error(`❌ Schema template not found at: ${schemaPath}`);
                 process.exit(1);
@@ -74,7 +74,17 @@ cli
         }
     });
 
-cli.help();
-cli.version('0.0.1');
-cli.parse();
+cli
+    .command('secret', 'Generate a secure secret key for Better Auth')
+    .action(() => {
+        const { randomBytes } = require('crypto');
+        const secret = randomBytes(32).toString('hex');
+        console.log('\nGenerated Secret Key:');
+        console.log(secret);
+        console.log('\nAdd this to your .dev.vars or environment variables:');
+        console.log(`BETTER_AUTH_SECRET="${secret}"\n`);
+    });
 
+cli.version('0.0.1');
+cli.help();
+cli.parse();

@@ -1,6 +1,6 @@
 import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 
-export const user = sqliteTable("user", {
+export const users = sqliteTable("users", {
     id: text("id").primaryKey(),
     name: text("name").notNull(),
     email: text("email").notNull().unique(),
@@ -10,7 +10,7 @@ export const user = sqliteTable("user", {
     updatedAt: integer("updatedAt", { mode: "timestamp" }).notNull(),
 });
 
-export const session = sqliteTable("session", {
+export const sessions = sqliteTable("sessions", {
     id: text("id").primaryKey(),
     expiresAt: integer("expiresAt", { mode: "timestamp" }).notNull(),
     token: text("token").notNull().unique(),
@@ -18,14 +18,15 @@ export const session = sqliteTable("session", {
     updatedAt: integer("updatedAt", { mode: "timestamp" }).notNull(),
     ipAddress: text("ipAddress"),
     userAgent: text("userAgent"),
-    userId: text("userId").notNull().references(() => user.id, { onDelete: 'cascade' })
+    userId: text("userId").notNull().references(() => users.id, { onDelete: 'cascade' }),
+    activeOrganizationId: text("activeOrganizationId"),
 });
 
-export const account = sqliteTable("account", {
+export const accounts = sqliteTable("accounts", {
     id: text("id").primaryKey(),
     accountId: text("accountId").notNull(),
     providerId: text("providerId").notNull(),
-    userId: text("userId").notNull().references(() => user.id, { onDelete: 'cascade' }),
+    userId: text("userId").notNull().references(() => users.id, { onDelete: 'cascade' }),
     accessToken: text("accessToken"),
     refreshToken: text("refreshToken"),
     idToken: text("idToken"),
@@ -37,7 +38,7 @@ export const account = sqliteTable("account", {
     updatedAt: integer("updatedAt", { mode: "timestamp" }).notNull(),
 });
 
-export const verification = sqliteTable("verification", {
+export const verifications = sqliteTable("verifications", {
     id: text("id").primaryKey(),
     identifier: text("identifier").notNull(),
     value: text("value").notNull(),
@@ -46,7 +47,7 @@ export const verification = sqliteTable("verification", {
     updatedAt: integer("updatedAt", { mode: "timestamp" }),
 });
 
-export const organization = sqliteTable("organization", {
+export const organizations = sqliteTable("organizations", {
     id: text("id").primaryKey(),
     name: text("name").notNull(),
     slug: text("slug").unique(),
@@ -55,20 +56,20 @@ export const organization = sqliteTable("organization", {
     metadata: text("metadata"),
 });
 
-export const member = sqliteTable("member", {
+export const members = sqliteTable("members", {
     id: text("id").primaryKey(),
-    organizationId: text("organizationId").notNull().references(() => organization.id, { onDelete: 'cascade' }),
-    userId: text("userId").notNull().references(() => user.id, { onDelete: 'cascade' }),
+    organizationId: text("organizationId").notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+    userId: text("userId").notNull().references(() => users.id, { onDelete: 'cascade' }),
     role: text("role").notNull(),
     createdAt: integer("createdAt", { mode: "timestamp" }).notNull(),
 });
 
-export const invitation = sqliteTable("invitation", {
+export const invitations = sqliteTable("invitations", {
     id: text("id").primaryKey(),
-    organizationId: text("organizationId").notNull().references(() => organization.id, { onDelete: 'cascade' }),
+    organizationId: text("organizationId").notNull().references(() => organizations.id, { onDelete: 'cascade' }),
     email: text("email").notNull(),
     role: text("role"),
     status: text("status").notNull(),
     expiresAt: integer("expiresAt", { mode: "timestamp" }).notNull(),
-    inviterId: text("inviterId").notNull().references(() => user.id, { onDelete: 'cascade' }),
+    inviterId: text("inviterId").notNull().references(() => users.id, { onDelete: 'cascade' }),
 });

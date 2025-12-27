@@ -41,14 +41,19 @@ export const createAuth = (config: AuthConfig) => {
 
     const { database, secret, baseUrl, provider: _, ...rest } = config;
 
-    // Use default schema if provider is sqlite and no schema was implicitly part of db (hard to know, but safe to pass for D1 case)
+    // Map pluralized schema to singular better-auth model names
     let adapterOptions: any = {
         provider: provider as any,
+        schema: {
+            user: defaultSchema.users,
+            session: defaultSchema.sessions,
+            account: defaultSchema.accounts,
+            verification: defaultSchema.verifications,
+            organization: defaultSchema.organizations,
+            member: defaultSchema.members,
+            invitation: defaultSchema.invitations,
+        }
     };
-
-    if (provider === "sqlite") {
-        adapterOptions.schema = defaultSchema;
-    }
 
     const auth = betterAuth({
         database: drizzleAdapter(db, adapterOptions),
