@@ -1,5 +1,6 @@
 .ca-container {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  width: 100%;
   max-width: 420px;
   margin: 0 auto;
   padding: 2.5rem;
@@ -197,11 +198,24 @@ button[type="submit"]:disabled {
   }
 
   .ca-layout-split.ca-container {
-    max-width: 780px;
+    /* base styles, width controlled by utility classes */
+  }
+
+  /* Width Variants */
+  .ca-layout-split.ca-width-compact {
+    max-width: 640px !important;
+  }
+
+  .ca-layout-split.ca-width-default {
+    max-width: 768px !important;
+  }
+
+  .ca-layout-split.ca-width-wide {
+    max-width: 1000px !important;
   }
 
   .ca-split-main {
-    flex: 1;
+    flex: 2;
     min-width: 0;
   }
 
@@ -233,7 +247,7 @@ button[type="submit"]:disabled {
   }
 
   .ca-split-social {
-    width: 260px;
+    flex: 1;
     flex-shrink: 0;
     display: flex;
     flex-direction: column;

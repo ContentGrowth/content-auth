@@ -8,7 +8,7 @@ interface AuthFormProps {
     socialProviders?: string[];
     socialLayout?: 'row' | 'column';
     title?: React.ReactNode;
-    width?: 'default' | 'wide';
+    width?: 'default' | 'compact' | 'wide';
     layout?: 'default' | 'split';
     socialPosition?: 'top' | 'bottom';
     view?: 'signin' | 'signup';
@@ -75,7 +75,16 @@ export const AuthForm: React.FC<AuthFormProps> = ({
     };
 
     const socialClass = socialLayout === 'column' ? 'ca-social-column' : 'ca-social-grid';
-    const containerClass = `ca-container ${layout === 'split' ? 'ca-layout-split' : ''} ${width === 'wide' ? 'ca-container-wide' : ''} ${className || ''}`;
+
+    // Map width prop to class. 'default' and 'wide' mapped to new system or kept as fallbacks if needed.
+    // Assuming 'wide' mapped to 'max' logic or just keeping 'ca-container-wide' separation if legacy.
+    // For split layout, strictly use the new classes.
+    let widthClass = '';
+    if (width === 'compact') widthClass = 'ca-width-compact';
+    else if (width === 'wide') widthClass = 'ca-width-wide';
+    else widthClass = 'ca-width-default'; // default for split
+
+    const containerClass = `ca-container ${layout === 'split' ? 'ca-layout-split' : ''} ${widthClass} ${className || ''}`;
 
     const renderSocials = () => (
         socialProviders.length > 0 && (
