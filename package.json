@@ -1,6 +1,6 @@
 {
     "name": "@contentgrowth/content-auth",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "description": "Better Auth wrapper with UI components for Cloudflare Workers & Pages",
     "type": "module",
     "main": "./dist/index.js",
@@ -50,8 +50,8 @@
     "author": "Content Growth",
     "license": "MIT",
     "peerDependencies": {
-        "react": "^18.0.0",
-        "react-dom": "^18.0.0"
+        "react": ">=18.2.0",
+        "react-dom": ">=18.2.0"
     },
     "dependencies": {
         "better-auth": "^1.4.9",
