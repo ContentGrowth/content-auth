@@ -9,7 +9,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const cli = cac('content-auth');
 
 cli
-    .command('init', 'Initialize database schema in your project')
+    .command('init', 'Initialize database schema (SQL) in your project')
     .option('-o, --output <path>', 'Output path for schema file', { default: './migrations/0000_auth.sql' })
     .option('--force', 'Overwrite existing file')
     .action((options) => {
@@ -25,7 +25,6 @@ cli
 
         try {
             // Find the schema file relative to the CLI location
-            // When installed, __dirname is in dist/, schema is in schema/
             const schemaPath = join(__dirname, '..', 'schema', 'auth.sql');
 
             if (!existsSync(schemaPath)) {
@@ -43,12 +42,65 @@ cli
             const schemaContent = readFileSync(schemaPath, 'utf-8');
             writeFileSync(outputPath, schemaContent);
 
-            console.log(`✅ Schema initialized at: ${outputPath}`);
+            console.log(`✅ SQL schema initialized at: ${outputPath}`);
             console.log('');
             console.log('Next steps:');
             console.log('  1. Add your application tables at the bottom of the file');
             console.log('  2. Run migrations:');
             console.log('     wrangler d1 migrations apply DB --local');
+
+        } catch (error) {
+            console.error('❌ Failed to initialize schema:', error);
+            process.exit(1);
+        }
+    });
+
+cli
+    .command('init-drizzle', 'Initialize Drizzle ORM schema (TypeScript) in your project')
+    .option('-o, --output <path>', 'Output path for schema file', { default: './src/db/schema.ts' })
+    .option('--force', 'Overwrite existing file')
+    .action((options) => {
+        const outputPath = resolve(process.cwd(), options.output);
+        const outputDir = dirname(outputPath);
+
+        // Check if file already exists
+        if (existsSync(outputPath) && !options.force) {
+            console.error(`❌ File already exists: ${outputPath}`);
+            console.error('   Use --force to overwrite, or specify a different output with -o');
+            process.exit(1);
+        }
+
+        try {
+            // Find the template file relative to the CLI location
+            const templatePath = join(__dirname, '..', 'schema', 'schema.template.ts');
+
+            if (!existsSync(templatePath)) {
+                console.error(`❌ Schema template not found at: ${templatePath}`);
+                process.exit(1);
+            }
+
+            // Create output directory if needed
+            if (!existsSync(outputDir)) {
+                mkdirSync(outputDir, { recursive: true });
+                console.log(`📁 Created directory: ${outputDir}`);
+            }
+
+            // Copy the template
+            const templateContent = readFileSync(templatePath, 'utf-8');
+            writeFileSync(outputPath, templateContent);
+
+            console.log(`✅ Drizzle schema initialized at: ${outputPath}`);
+            console.log('');
+            console.log('Next steps:');
+            console.log('  1. Add your application tables at the bottom of the file');
+            console.log('  2. Create drizzle.config.ts in your project root');
+            console.log('  3. Generate migrations: npm run db:generate');
+            console.log('  4. Apply migrations: npm run dev');
+            console.log('');
+            console.log('Recommended package.json scripts:');
+            console.log('  "db:generate": "drizzle-kit generate"');
+            console.log('  "db:check": "drizzle-kit check"');
+            console.log('  "db:migrate:local": "wrangler d1 migrations apply DB --local"');
 
         } catch (error) {
             console.error('❌ Failed to initialize schema:', error);
