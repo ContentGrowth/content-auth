@@ -21,11 +21,17 @@ export interface AuthConfig {
      * Use 'postgres' or 'mysql' if passing a Drizzle instance for those DBs.
      */
     provider?: "sqlite" | "postgres" | "mysql";
+    /**
+     * Use Cloudflare native crypto.subtle for password hashing to avoid CPU limits.
+     * Defaults to true. Set to false to use Better Auth's default (Scrypt/Argon2).
+     */
+    useCloudflareNativeHashing?: boolean;
     // Allow passing other better-auth options
     [key: string]: any;
 }
 
 import * as defaultSchema from "./schema";
+import { hashPassword, verifyPassword } from "./native-hashing";
 
 export const createAuth = (config: AuthConfig) => {
     let db;
@@ -39,7 +45,7 @@ export const createAuth = (config: AuthConfig) => {
         db = config.database;
     }
 
-    const { database, secret, baseUrl, provider: _, ...rest } = config;
+    const { database, secret, baseUrl, provider: _, useCloudflareNativeHashing = true, ...rest } = config;
 
     // Map pluralized schema to singular better-auth model names
     let adapterOptions: any = {
@@ -55,11 +61,27 @@ export const createAuth = (config: AuthConfig) => {
         }
     };
 
+    // Extract emailAndPassword from rest if it exists, to merge deeply
+    const emailConfig = (rest as any).emailAndPassword || { enabled: true };
+    const { emailAndPassword, ...otherOptions } = rest as any;
+
+    const emailPasswordOptions = {
+        ...emailConfig
+    };
+
+    if (useCloudflareNativeHashing) {
+        emailPasswordOptions.password = {
+            hash: hashPassword,
+            verify: verifyPassword
+        };
+    }
+
     const auth = betterAuth({
         database: drizzleAdapter(db, adapterOptions),
         secret: secret,
         baseURL: baseUrl,
-        ...rest,
+        emailAndPassword: emailPasswordOptions,
+        ...otherOptions,
     });
 
     return auth;
