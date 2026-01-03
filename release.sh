@@ -19,6 +19,11 @@ if ! git diff-index --quiet HEAD --; then
     fi
 fi
 
+# Build the package to ensure preview is accurate
+echo "🛠️  Building package..."
+npm run build
+echo ""
+
 # Show what will be published
 echo "📦 Package contents preview:"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -44,8 +49,7 @@ fi
 echo ""
 echo "📤 Publishing to npm..."
 
-# Note: No build step required as this is a pure ES module project
-# If a build step is added later (e.g. TypeScript), add 'npm run build' here
+
 
 # Publish to npm
 # --access public is required for scoped packages to be public
