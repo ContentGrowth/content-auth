@@ -25,12 +25,31 @@ export async function hashPassword(password: string): Promise<string> {
     return `pbkdf2:100000:${saltB64}:${hashB64}`;
 }
 
-export async function verifyPassword(password: string, storedHash: string): Promise<boolean> {
-    const parts = storedHash.split(':');
+export async function verifyPassword(passwordOrData: string | { password: string; hash: string }, storedHash?: string): Promise<boolean> {
+    let password: string;
+    let hash: string;
+
+    if (typeof passwordOrData === 'object' && passwordOrData !== null) {
+        password = passwordOrData.password;
+        hash = passwordOrData.hash;
+    } else {
+        password = passwordOrData as string;
+        hash = storedHash as string;
+    }
+
+    if (!hash) {
+        // Log error but generally return false
+        console.error("[Auth] verifyPassword called with empty/undefined hash");
+        return false;
+    }
+
+    const parts = hash.split(':');
     if (parts.length !== 4) return false;
 
     const [alg, iterationsStr, saltB64, hashB64] = parts;
-    if (alg !== 'pbkdf2') return false; // Fallback handling would go here
+    if (alg !== 'pbkdf2') return false;
+
+    // Handle legacy/other algs if needed here
 
     const iterations = parseInt(iterationsStr, 10);
     const salt = Uint8Array.from(atob(saltB64), c => c.charCodeAt(0));

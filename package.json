@@ -1,6 +1,6 @@
 {
     "name": "@contentgrowth/content-auth",
-    "version": "0.0.4",
+    "version": "0.1.0",
     "description": "Better Auth wrapper with UI components for Cloudflare Workers & Pages",
     "type": "module",
     "main": "./dist/index.js",
