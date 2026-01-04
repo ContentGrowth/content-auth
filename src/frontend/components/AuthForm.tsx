@@ -13,6 +13,10 @@ interface AuthFormProps {
     layout?: 'default' | 'split';
     socialPosition?: 'top' | 'bottom';
     onSwitchMode?: () => void;
+    /** Pre-populate the email field (useful for invitation flows) */
+    defaultEmail?: string;
+    /** Lock the email field (readonly) and hide social logins */
+    lockEmail?: boolean;
 }
 
 export const AuthForm: React.FC<AuthFormProps> = ({
@@ -26,10 +30,12 @@ export const AuthForm: React.FC<AuthFormProps> = ({
     layout = 'default',
     socialPosition = 'top',
     view,
-    onSwitchMode
+    onSwitchMode,
+    defaultEmail = '',
+    lockEmail = false
 }) => {
     const [isLogin, setIsLogin] = useState(view !== 'signup');
-    const [email, setEmail] = useState('');
+    const [email, setEmail] = useState(defaultEmail);
     const [password, setPassword] = useState('');
     const [name, setName] = useState('');
     const [loading, setLoading] = useState(false);
@@ -93,7 +99,8 @@ export const AuthForm: React.FC<AuthFormProps> = ({
     const containerClass = `ca-container ${layout === 'split' ? 'ca-layout-split' : ''} ${widthClass} ${className || ''}`;
 
     const renderSocials = () => (
-        socialProviders.length > 0 && (
+        // Hide social logins when email is locked (e.g., invitation flow)
+        !lockEmail && socialProviders.length > 0 && (
             <div className={socialClass}>
                 {socialProviders.map(provider => (
                     <button
@@ -151,9 +158,10 @@ export const AuthForm: React.FC<AuthFormProps> = ({
                     <input
                         id="email"
                         type="email"
-                        className="ca-input"
+                        className={`ca-input ${lockEmail ? 'ca-input-locked' : ''}`}
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        onChange={(e) => !lockEmail && setEmail(e.target.value)}
+                        readOnly={lockEmail}
                         required
                     />
                 </div>
