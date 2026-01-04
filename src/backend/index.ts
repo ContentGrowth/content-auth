@@ -105,3 +105,4 @@ export const createAuthApp = (config: AuthConfig) => {
 }
 
 export * as schema from "./schema";
+export * from "./utils";
