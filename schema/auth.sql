@@ -19,7 +19,7 @@
 -- ==========================================
 
 -- Users
-CREATE TABLE IF NOT EXISTS user (
+CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS user (
 );
 
 -- Sessions
-CREATE TABLE IF NOT EXISTS session (
+CREATE TABLE IF NOT EXISTS sessions (
     id TEXT PRIMARY KEY,
     expiresAt TIMESTAMP NOT NULL,
     token TEXT NOT NULL UNIQUE,
@@ -38,15 +38,16 @@ CREATE TABLE IF NOT EXISTS session (
     updatedAt TIMESTAMP NOT NULL,
     ipAddress TEXT,
     userAgent TEXT,
-    userId TEXT NOT NULL REFERENCES user(id) ON DELETE CASCADE
+    userId TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    activeOrganizationId TEXT
 );
 
 -- OAuth/Credential Accounts
-CREATE TABLE IF NOT EXISTS account (
+CREATE TABLE IF NOT EXISTS accounts (
     id TEXT PRIMARY KEY,
     accountId TEXT NOT NULL,
     providerId TEXT NOT NULL,
-    userId TEXT NOT NULL REFERENCES user(id) ON DELETE CASCADE,
+    userId TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     accessToken TEXT,
     refreshToken TEXT,
     idToken TEXT,
@@ -59,7 +60,7 @@ CREATE TABLE IF NOT EXISTS account (
 );
 
 -- Email/Token Verification
-CREATE TABLE IF NOT EXISTS verification (
+CREATE TABLE IF NOT EXISTS verifications (
     id TEXT PRIMARY KEY,
     identifier TEXT NOT NULL,
     value TEXT NOT NULL,
@@ -73,7 +74,7 @@ CREATE TABLE IF NOT EXISTS verification (
 -- ==========================================
 
 -- Organizations
-CREATE TABLE IF NOT EXISTS organization (
+CREATE TABLE IF NOT EXISTS organizations (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     slug TEXT UNIQUE,
@@ -83,23 +84,24 @@ CREATE TABLE IF NOT EXISTS organization (
 );
 
 -- Organization Members
-CREATE TABLE IF NOT EXISTS member (
+CREATE TABLE IF NOT EXISTS members (
     id TEXT PRIMARY KEY,
-    organizationId TEXT NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
-    userId TEXT NOT NULL REFERENCES user(id) ON DELETE CASCADE,
+    organizationId TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    userId TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     role TEXT NOT NULL,  -- 'owner', 'admin', 'member'
     createdAt TIMESTAMP NOT NULL
 );
 
 -- Organization Invitations
-CREATE TABLE IF NOT EXISTS invitation (
+CREATE TABLE IF NOT EXISTS invitations (
     id TEXT PRIMARY KEY,
-    organizationId TEXT NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
+    organizationId TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     email TEXT NOT NULL,
     role TEXT,
     status TEXT NOT NULL,  -- 'pending', 'accepted', 'rejected', 'expired'
     expiresAt TIMESTAMP NOT NULL,
-    inviterId TEXT NOT NULL REFERENCES user(id) ON DELETE CASCADE
+    inviterId TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    createdAt TIMESTAMP NOT NULL
 );
 
 -- ==========================================
@@ -109,7 +111,7 @@ CREATE TABLE IF NOT EXISTS invitation (
 -- 
 -- CREATE TABLE IF NOT EXISTS my_entity (
 --     id TEXT PRIMARY KEY,
---     org_id TEXT NOT NULL,  -- References organization.id
+--     org_id TEXT NOT NULL,  -- References organizations.id
 --     name TEXT NOT NULL,
 --     created_at INTEGER
 -- );

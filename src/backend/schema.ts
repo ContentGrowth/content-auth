@@ -72,4 +72,5 @@ export const invitations = sqliteTable("invitations", {
     status: text("status").notNull(),
     expiresAt: integer("expiresAt", { mode: "timestamp" }).notNull(),
     inviterId: text("inviterId").notNull().references(() => users.id, { onDelete: 'cascade' }),
+    createdAt: integer("createdAt", { mode: "timestamp" }).notNull(),
 });
