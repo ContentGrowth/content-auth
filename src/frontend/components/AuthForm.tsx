@@ -17,6 +17,8 @@ interface AuthFormProps {
     defaultEmail?: string;
     /** Lock the email field (readonly) and hide social logins */
     lockEmail?: boolean;
+    /** URL for the forgot password page (shows link on login form if provided) */
+    forgotPasswordUrl?: string;
 }
 
 export const AuthForm: React.FC<AuthFormProps> = ({
@@ -32,7 +34,8 @@ export const AuthForm: React.FC<AuthFormProps> = ({
     view,
     onSwitchMode,
     defaultEmail = '',
-    lockEmail = false
+    lockEmail = false,
+    forgotPasswordUrl
 }) => {
     const [isLogin, setIsLogin] = useState(view !== 'signup');
     const [email, setEmail] = useState(defaultEmail);
@@ -167,7 +170,12 @@ export const AuthForm: React.FC<AuthFormProps> = ({
                 </div>
 
                 <div className="ca-input-group">
-                    <label className="ca-label" htmlFor="password">Password</label>
+                    <div className="ca-label-row">
+                        <label className="ca-label" htmlFor="password">Password</label>
+                        {isLogin && forgotPasswordUrl && (
+                            <a href={forgotPasswordUrl} className="ca-forgot-link">Forgot password?</a>
+                        )}
+                    </div>
                     <input
                         id="password"
                         type="password"
