@@ -74,7 +74,7 @@ export function getSessionToken(req: Request): string | null {
 export async function triggerPasswordReset(auth: any, email: string): Promise<{ success: boolean; error?: string }> {
     try {
         // Use better-auth's internal forgetPassword API
-        const result = await auth.api.forgetPassword({
+        await auth.api.forgetPassword({
             body: { email }
         });
 
