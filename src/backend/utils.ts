@@ -62,3 +62,25 @@ export function getSessionToken(req: Request): string | null {
         cookies['__Secure-better-auth.session_token'] ||
         null;
 }
+
+/**
+ * Programmatically triggers a password reset email for a user.
+ * This bypasses the need for an HTTP call by using better-auth's internal API.
+ * 
+ * @param auth The auth instance created by createAuth()
+ * @param email The user's email address
+ * @returns Promise that resolves when the reset email is triggered
+ */
+export async function triggerPasswordReset(auth: any, email: string): Promise<{ success: boolean; error?: string }> {
+    try {
+        // Use better-auth's internal forgetPassword API
+        const result = await auth.api.forgetPassword({
+            body: { email }
+        });
+
+        return { success: true };
+    } catch (e: any) {
+        console.error('[triggerPasswordReset] Failed:', e);
+        return { success: false, error: e.message || 'Failed to trigger password reset' };
+    }
+}
