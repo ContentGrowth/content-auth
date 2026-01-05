@@ -188,6 +188,64 @@ button[type="submit"]:disabled {
   color: #1d4ed8;
 }
 
+/* Subtitle */
+.ca-subtitle {
+  text-align: center;
+  color: #6b7280;
+  font-size: 0.9375rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+/* Success Message */
+.ca-success-message {
+  text-align: center;
+  padding: 1.5rem 0;
+}
+
+.ca-success-icon {
+  margin: 0 auto 1rem;
+  display: block;
+}
+
+.ca-success-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 0.75rem;
+}
+
+.ca-success-text {
+  color: #6b7280;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+/* Error Message Block */
+.ca-error-message {
+  text-align: center;
+  padding: 1.5rem 0;
+}
+
+.ca-error-icon {
+  margin: 0 auto 1rem;
+  display: block;
+}
+
+.ca-error-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 0.75rem;
+}
+
+.ca-error-text {
+  color: #6b7280;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+/* Inline Error */
 .ca-error {
   background-color: #fef2f2;
   color: #ef4444;
@@ -206,8 +264,17 @@ button[type="submit"]:disabled {
   margin-bottom: 1.5rem;
 }
 
-.ca-container-wide {
-  max-width: 600px;
+/* Width Modifiers */
+.ca-width-wide {
+  max-width: 600px !important;
+}
+
+.ca-width-compact {
+  max-width: 360px !important;
+}
+
+.ca-width-default {
+  max-width: 420px !important;
 }
 
 /* Split Layout */
