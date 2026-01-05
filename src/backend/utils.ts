@@ -30,3 +30,35 @@ export function getInvitationLink(data: any, baseUrl: string) {
         link: rawLink
     };
 }
+
+/**
+ * Extracts the session token from the request.
+ * Checks "Authorization: Bearer <token>" header first.
+ * Then checks cookies for "better-auth.session_token", "session_token", and "__Secure-better-auth.session_token".
+ * 
+ * @param req The Request object
+ * @returns The session token or null if not found
+ */
+export function getSessionToken(req: Request): string | null {
+    const authHeader = req.headers.get('Authorization');
+    if (authHeader?.startsWith('Bearer ')) {
+        return authHeader.split(' ')[1];
+    }
+
+    const cookieHeader = req.headers.get('Cookie');
+    if (!cookieHeader) return null;
+
+    // Parse cookies manually to be framework agnostic
+    const cookies: Record<string, string> = {};
+    cookieHeader.split(';').forEach(c => {
+        const [key, value] = c.trim().split('=');
+        if (key && value) {
+            cookies[key] = value;
+        }
+    });
+
+    return cookies['better-auth.session_token'] ||
+        cookies['session_token'] ||
+        cookies['__Secure-better-auth.session_token'] ||
+        null;
+}
