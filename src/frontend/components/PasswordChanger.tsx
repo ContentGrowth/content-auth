@@ -20,29 +20,6 @@ export const PasswordChanger: React.FC<PasswordChangerProps> = ({
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [loading, setLoading] = useState(false);
-    const [canChangePassword, setCanChangePassword] = useState(true);
-    const [authMessage, setAuthMessage] = useState<string | null>(null);
-
-    // Check if user has a password-based account
-    React.useEffect(() => {
-        const checkAccounts = async () => {
-            try {
-                const accounts = await client.listAccounts();
-                if (accounts?.data) {
-                    const hasCredential = accounts.data.some((acc: any) => acc.providerId === 'credential');
-                    if (!hasCredential) {
-                        setCanChangePassword(false);
-                        const providers = accounts.data.map((acc: any) => acc.providerId).join(', ');
-                        setAuthMessage(`You are signed in via ${providers}. You cannot change your password here because you don't have a password set.`);
-                    }
-                }
-            } catch (e) {
-                // If listAccounts fails or plugin not enabled, fallback to default behavior (try-catch on submit)
-                console.warn("Failed to list accounts", e);
-            }
-        };
-        checkAccounts();
-    }, [client]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -72,9 +49,7 @@ export const PasswordChanger: React.FC<PasswordChangerProps> = ({
             onSuccess?.(res?.data);
         } catch (err: any) {
             if (err?.code === 'CREDENTIAL_ACCOUNT_NOT_FOUND' || err?.message?.includes('Credential account not found')) {
-                setCanChangePassword(false);
-                setAuthMessage("You are logged in via a social provider and do not have a password set.");
-                onError?.("Password change unavailable for social logins.");
+                onError?.("You are logged in via a social provider (e.g. GitHub, Google) and do not have a password set.");
             } else {
                 onError?.(err.message || 'Failed to change password');
             }
@@ -82,17 +57,6 @@ export const PasswordChanger: React.FC<PasswordChangerProps> = ({
             setLoading(false);
         }
     };
-
-    if (!canChangePassword) {
-        return (
-            <div className={`ca-form ${className || ''}`}>
-                <div className="ca-info-message" style={{ textAlign: 'center', padding: '2rem', background: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
-                    <p style={{ color: '#6b7280', marginBottom: '0.5rem' }}>Password Change Unavailable</p>
-                    <p style={{ color: '#374151', fontSize: '0.95rem' }}>{authMessage || "Your account is managed by a third-party provider."}</p>
-                </div>
-            </div>
-        );
-    }
 
     return (
         <form onSubmit={handleSubmit} className={`ca-form ${className || ''}`}>
