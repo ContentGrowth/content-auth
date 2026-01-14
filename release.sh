@@ -19,12 +19,9 @@ if ! git diff-index --quiet HEAD --; then
     fi
 fi
 
-# Build the package to ensure preview is accurate
-echo "🛠️  Building package..."
-npm run build
-echo ""
 
 # Show what will be published
+# Note: Preview uses existing dist/. `npm publish` will rebuild via prepublishOnly hook.
 echo "📦 Package contents preview:"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 npm pack --dry-run
