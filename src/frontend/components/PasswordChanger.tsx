@@ -34,8 +34,7 @@ export const PasswordChanger: React.FC<PasswordChangerProps> = ({
         try {
             const res = await client.changePassword({
                 currentPassword,
-                newPassword,
-                revokeOtherSessions: revokeSessionsByDefault
+                newPassword
             });
 
             if (res?.error) {
