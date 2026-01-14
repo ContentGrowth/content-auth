@@ -4,7 +4,7 @@ import { authClient } from '../client';
 interface AuthFormProps {
     view?: 'signin' | 'signup';
     client?: typeof authClient;
-    onSuccess?: () => void;
+    onSuccess?: (data?: any) => void;
     className?: string;
     socialProviders?: string[];
     socialLayout?: 'row' | 'column';
@@ -57,21 +57,22 @@ export const AuthForm: React.FC<AuthFormProps> = ({
         setError(null);
 
         try {
+            let response: any;
             if (isLogin) {
-                const { error } = await client.signIn.email({
+                response = await client.signIn.email({
                     email,
                     password,
                 });
-                if (error) throw error;
+                if (response.error) throw response.error;
             } else {
-                const { error } = await client.signUp.email({
+                response = await client.signUp.email({
                     email,
                     password,
                     name,
                 });
-                if (error) throw error;
+                if (response.error) throw response.error;
             }
-            onSuccess?.();
+            onSuccess?.(response.data);
         } catch (err: any) {
             setError(err.message || 'An error occurred');
         } finally {

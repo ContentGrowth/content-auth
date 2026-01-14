@@ -26,6 +26,19 @@ export interface AuthConfig {
      * Defaults to true. Set to false to use Better Auth's default (Scrypt/Argon2).
      */
     useCloudflareNativeHashing?: boolean;
+    /**
+     * Email verification configuration.
+     * For email/password signups, you can enable automatic verification emails.
+     * OAuth signups (Google, GitHub) automatically set emailVerified = true.
+     */
+    emailVerification?: {
+        /** Send verification email automatically on signup. Default: false */
+        sendOnSignUp?: boolean;
+        /** Auto sign in user after email verification. Default: true */
+        autoSignInAfterVerification?: boolean;
+        /** Callback to send verification email */
+        sendVerificationEmail?: (data: { user: any; url: string; token: string }, request: any) => Promise<void> | void;
+    };
     // Allow passing other better-auth options
     [key: string]: any;
 }
@@ -45,7 +58,7 @@ export const createAuth = (config: AuthConfig) => {
         db = config.database;
     }
 
-    const { database, secret, baseUrl, provider: _, useCloudflareNativeHashing = true, ...rest } = config;
+    const { database, secret, baseUrl, provider: _, useCloudflareNativeHashing = true, emailVerification, ...rest } = config;
 
     // Map pluralized schema to singular better-auth model names
     let adapterOptions: any = {
@@ -81,6 +94,8 @@ export const createAuth = (config: AuthConfig) => {
         secret: secret,
         baseURL: baseUrl,
         emailAndPassword: emailPasswordOptions,
+        // Pass emailVerification config if provided
+        ...(emailVerification ? { emailVerification } : {}),
         ...otherOptions,
     });
 
