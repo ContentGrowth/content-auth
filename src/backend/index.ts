@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { createAuthMiddleware, APIError } from "better-auth/api";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { drizzle } from "drizzle-orm/d1";
 import type { D1Database } from "@cloudflare/workers-types";
@@ -131,88 +132,60 @@ export const createAuth = (config: AuthConfig) => {
     // Build hooks with Turnstile and email normalization support
     const normalizedEmailColumn = emailNormalization?.columnName || 'normalized_email';
 
-    const contentAuthHooks: any = {
-        before: async (context: any) => {
-            const path = context.path || "";
+    // Use createAuthMiddleware to properly intercept and block requests
+    const contentAuthBeforeHook = createAuthMiddleware(async (ctx) => {
+        const path = ctx.path || "";
 
-            // --- Email Signup Protection: Turnstile & Normalization ---
-            if (path.includes("/sign-up/email")) {
-                try {
-                    let body;
-                    if (context.body) {
-                        body = context.body;
-                    } else {
-                        try {
-                            body = await context.request.clone().json();
-                        } catch (e) {
-                            // Not JSON body, skip
-                        }
+        // --- Email Signup Protection: Turnstile & Normalization ---
+        if (path.includes("/sign-up/email")) {
+            const body = ctx.body;
+
+            if (body) {
+                // 1. Verify Turnstile token (if configured)
+                if (turnstileConfig?.secretKey) {
+                    const turnstileToken = (body as any).turnstileToken;
+                    if (!turnstileToken) {
+                        console.warn('[ContentAuth] Email signup missing Turnstile token');
+                        throw new APIError("BAD_REQUEST", {
+                            message: 'Please complete the security challenge',
+                        });
                     }
 
-                    if (body) {
-                        // 1. Verify Turnstile token (if configured)
-                        if (turnstileConfig?.secretKey) {
-                            const turnstileToken = body.turnstileToken;
-                            if (!turnstileToken) {
-                                console.warn('[ContentAuth] Email signup missing Turnstile token');
-                                return {
-                                    status: 400,
-                                    body: JSON.stringify({
-                                        success: false,
-                                        code: 'TURNSTILE_REQUIRED',
-                                        message: 'Please complete the security challenge'
-                                    }),
-                                    headers: { 'Content-Type': 'application/json' }
-                                };
-                            }
-
-                            const { success, error } = await verifyTurnstile(turnstileConfig.secretKey, turnstileToken);
-                            if (!success) {
-                                console.warn(`[ContentAuth] Turnstile verification failed: ${error}`);
-                                return {
-                                    status: 400,
-                                    body: JSON.stringify({
-                                        success: false,
-                                        code: 'TURNSTILE_FAILED',
-                                        message: error || 'Security challenge failed. Please try again.'
-                                    }),
-                                    headers: { 'Content-Type': 'application/json' }
-                                };
-                            }
-                        }
-
-                        // 2. Email normalization check for duplicates
-                        if (emailNormalization?.enabled && body.email && rawDb?.prepare) {
-                            const normalized = normalizeEmail(body.email);
-                            const existing = await rawDb.prepare(
-                                `SELECT id FROM users WHERE ${normalizedEmailColumn} = ?`
-                            ).bind(normalized).first();
-
-                            if (existing) {
-                                console.warn(`[ContentAuth] Duplicate normalized email detected: ${normalized}`);
-                                return {
-                                    status: 400,
-                                    body: JSON.stringify({
-                                        success: false,
-                                        code: 'EMAIL_EXISTS',
-                                        message: 'An account with this email already exists'
-                                    }),
-                                    headers: { 'Content-Type': 'application/json' }
-                                };
-                            }
-                        }
+                    const { success, error } = await verifyTurnstile(turnstileConfig.secretKey, turnstileToken);
+                    if (!success) {
+                        console.warn(`[ContentAuth] Turnstile verification failed: ${error}`);
+                        throw new APIError("BAD_REQUEST", {
+                            message: error || 'Security challenge failed. Please try again.',
+                        });
                     }
-                } catch (e: any) {
-                    console.error('[ContentAuth] Email signup hook error:', e.message);
+                }
+
+                // 2. Email normalization check for duplicates
+                if (emailNormalization?.enabled && (body as any).email && rawDb?.prepare) {
+                    const normalized = normalizeEmail((body as any).email);
+                    const existing = await rawDb.prepare(
+                        `SELECT id FROM users WHERE ${normalizedEmailColumn} = ?`
+                    ).bind(normalized).first();
+
+                    if (existing) {
+                        console.warn(`[ContentAuth] Duplicate normalized email detected: ${normalized}`);
+                        throw new APIError("BAD_REQUEST", {
+                            message: 'An account with this email already exists',
+                        });
+                    }
                 }
             }
+        }
 
-            // Call user-provided before hook if exists
-            if (userHooks?.before) {
-                return userHooks.before(context);
-            }
-            return;
-        },
+        // Call user-provided before hook if exists
+        if (userHooks?.before) {
+            return userHooks.before(ctx);
+        }
+        return;
+    });
+
+    const contentAuthHooks: any = {
+        before: contentAuthBeforeHook,
         after: async (context: any) => {
             const path = context.path || "";
             const user = context.user || context.response?.user || context.data?.user ||

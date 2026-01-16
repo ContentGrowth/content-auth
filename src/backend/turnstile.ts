@@ -58,12 +58,26 @@ export async function verifyTurnstile(
             body: formData.toString(),
         });
 
-        if (!response.ok) {
-            console.error(`[Turnstile] Siteverify API error: ${response.status}`);
-            return { success: false, error: `API error: ${response.status}` };
+        // Try to parse the response even if status is not OK
+        let result: TurnstileResponse;
+        try {
+            result = await response.json();
+        } catch (e) {
+            // If we can't parse JSON, return a generic error
+            console.error(`[Turnstile] Failed to parse response: ${response.status}`);
+            return { success: false, error: 'Security verification failed. Please try again.' };
         }
 
-        const result: TurnstileResponse = await response.json();
+        if (!response.ok) {
+            // Cloudflare returned an error status, but we may have error codes in the body
+            const errorCodes = result['error-codes'] || [];
+            console.error(`[Turnstile] Siteverify API error ${response.status}: ${errorCodes.join(', ')}`);
+
+            if (errorCodes.length > 0) {
+                return { success: false, error: mapTurnstileError(errorCodes) };
+            }
+            return { success: false, error: 'Security verification failed. Please try again.' };
+        }
 
         if (result.success) {
             return { success: true, hostname: result.hostname };

@@ -118,7 +118,34 @@ export const AuthForm: React.FC<AuthFormProps> = ({
             }
             onSuccess?.(response.data);
         } catch (err: any) {
-            setError(err.message || 'An error occurred');
+            // Map error codes/messages to user-friendly messages
+            const errorMessage = err.message || '';
+            const errorCode = err.code || '';
+
+            let friendlyMessage = 'An error occurred. Please try again.';
+
+            // Handle specific error codes from content-auth
+            if (errorMessage.includes('TURNSTILE') || errorMessage.includes('security challenge')) {
+                friendlyMessage = 'Security verification failed. Please complete the challenge and try again.';
+            } else if (errorMessage.includes('EMAIL_EXISTS') || errorMessage.includes('already exists')) {
+                friendlyMessage = 'An account with this email already exists. Try signing in instead.';
+            } else if (errorMessage.includes('Invalid email') || errorMessage.includes('invalid email')) {
+                friendlyMessage = 'Please enter a valid email address.';
+            } else if (errorMessage.includes('Invalid password') || errorMessage.includes('incorrect')) {
+                friendlyMessage = 'Invalid email or password. Please check your credentials.';
+            } else if (errorMessage.includes('User not found')) {
+                friendlyMessage = 'No account found with this email. Try signing up instead.';
+            } else if (errorMessage.includes('too short') || errorMessage.includes('password')) {
+                friendlyMessage = 'Password must be at least 8 characters long.';
+            } else if (errorCode === 'BAD_REQUEST' || err.status === 400) {
+                // Generic bad request - likely validation failure
+                friendlyMessage = 'Please check your information and try again.';
+            } else if (err.message) {
+                // Use the original message if nothing else matches
+                friendlyMessage = err.message;
+            }
+
+            setError(friendlyMessage);
             // Reset Turnstile on error
             if (turnstileRef.current) {
                 turnstileRef.current.reset();
