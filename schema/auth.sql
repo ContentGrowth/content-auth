@@ -27,6 +27,8 @@ CREATE TABLE IF NOT EXISTS users (
     image TEXT,
     createdAt TIMESTAMP NOT NULL,
     updatedAt TIMESTAMP NOT NULL
+    -- Optional: For Gmail duplicate prevention (see docs)
+    -- normalized_email TEXT
 );
 
 -- Sessions

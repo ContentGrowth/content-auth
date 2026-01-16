@@ -1,7 +1,7 @@
 {
     "name": "@contentgrowth/content-auth",
-    "version": "0.2.9",
-    "description": "Better Auth wrapper with UI components for Cloudflare Workers & Pages",
+    "version": "0.3.0",
+    "description": "Better Auth wrapper with UI components for Cloudflare Workers & Pages. Includes Turnstile bot protection and email normalization.",
     "type": "module",
     "main": "./dist/index.js",
     "module": "./dist/index.js",
@@ -51,7 +51,13 @@
     "license": "MIT",
     "peerDependencies": {
         "react": ">=18.2.0",
-        "react-dom": ">=18.2.0"
+        "react-dom": ">=18.2.0",
+        "@marsidev/react-turnstile": ">=0.5.0"
+    },
+    "peerDependenciesMeta": {
+        "@marsidev/react-turnstile": {
+            "optional": true
+        }
     },
     "dependencies": {
         "better-auth": "^1.4.9",

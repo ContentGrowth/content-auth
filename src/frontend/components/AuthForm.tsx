@@ -1,5 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { authClient } from '../client';
+
+// Dynamic import for Turnstile to make it optional
+let TurnstileComponent: any = null;
+let useTurnstile = false;
+
+try {
+    // Try to import Turnstile - will fail if not installed
+    const turnstileModule = require('@marsidev/react-turnstile');
+    TurnstileComponent = turnstileModule.Turnstile;
+    useTurnstile = true;
+} catch (e) {
+    // @marsidev/react-turnstile not installed, Turnstile will be disabled
+}
 
 interface AuthFormProps {
     view?: 'signin' | 'signup';
@@ -19,6 +32,8 @@ interface AuthFormProps {
     lockEmail?: boolean;
     /** URL for the forgot password page (shows link on login form if provided) */
     forgotPasswordUrl?: string;
+    /** Cloudflare Turnstile site key. When set, shows Turnstile widget on signup. */
+    turnstileSiteKey?: string;
 }
 
 export const AuthForm: React.FC<AuthFormProps> = ({
@@ -35,7 +50,8 @@ export const AuthForm: React.FC<AuthFormProps> = ({
     onSwitchMode,
     defaultEmail = '',
     lockEmail = false,
-    forgotPasswordUrl
+    forgotPasswordUrl,
+    turnstileSiteKey
 }) => {
     const [isLogin, setIsLogin] = useState(view !== 'signup');
     const [email, setEmail] = useState(defaultEmail);
@@ -43,16 +59,43 @@ export const AuthForm: React.FC<AuthFormProps> = ({
     const [name, setName] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+    const turnstileRef = useRef<any>(null);
 
     const [mounted, setMounted] = useState(false);
 
-    React.useEffect(() => {
+    useEffect(() => {
         setMounted(true);
         setIsLogin(view !== 'signup');
     }, [view]);
 
+    // Check if Turnstile is required for signup
+    const turnstileEnabled = turnstileSiteKey && useTurnstile && TurnstileComponent;
+    const turnstileRequired = turnstileEnabled && !isLogin;
+    const canSubmit = !turnstileRequired || !!turnstileToken;
+
+    const handleTurnstileSuccess = (token: string) => {
+        setTurnstileToken(token);
+    };
+
+    const handleTurnstileError = () => {
+        setTurnstileToken(null);
+        setError('Security verification failed. Please try again.');
+    };
+
+    const handleTurnstileExpire = () => {
+        setTurnstileToken(null);
+        turnstileRef.current?.reset();
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (turnstileRequired && !turnstileToken) {
+            setError('Please complete the security challenge');
+            return;
+        }
+
         setLoading(true);
         setError(null);
 
@@ -65,16 +108,26 @@ export const AuthForm: React.FC<AuthFormProps> = ({
                 });
                 if (response.error) throw response.error;
             } else {
-                response = await client.signUp.email({
+                // Include Turnstile token for signup if available
+                const signupData: any = {
                     email,
                     password,
                     name,
-                });
+                };
+                if (turnstileToken) {
+                    signupData.turnstileToken = turnstileToken;
+                }
+                response = await client.signUp.email(signupData);
                 if (response.error) throw response.error;
             }
             onSuccess?.(response.data);
         } catch (err: any) {
             setError(err.message || 'An error occurred');
+            // Reset Turnstile on error
+            if (turnstileRef.current) {
+                turnstileRef.current.reset();
+                setTurnstileToken(null);
+            }
         } finally {
             setLoading(false);
         }
@@ -101,6 +154,29 @@ export const AuthForm: React.FC<AuthFormProps> = ({
     else widthClass = 'ca-width-default';
 
     const containerClass = `ca-container ${layout === 'split' ? 'ca-layout-split' : ''} ${widthClass} ${className || ''}`;
+
+    const renderTurnstile = () => {
+        if (!turnstileEnabled || isLogin) return null;
+
+        return (
+            <div className="ca-turnstile">
+                <TurnstileComponent
+                    ref={turnstileRef}
+                    siteKey={turnstileSiteKey}
+                    onSuccess={handleTurnstileSuccess}
+                    onError={handleTurnstileError}
+                    onExpire={handleTurnstileExpire}
+                    options={{
+                        theme: 'light',
+                        size: 'normal',
+                    }}
+                />
+                {!turnstileToken && (
+                    <p className="ca-turnstile-hint">Please complete the security check above</p>
+                )}
+            </div>
+        );
+    };
 
     const renderSocials = () => (
         // Hide social logins when email is locked (e.g., invitation flow)
@@ -187,9 +263,16 @@ export const AuthForm: React.FC<AuthFormProps> = ({
                     />
                 </div>
 
+                {/* Turnstile widget for signup */}
+                {renderTurnstile()}
+
                 {error && <div className="ca-error">{error}</div>}
 
-                <button type="submit" className="ca-button" disabled={loading}>
+                <button
+                    type="submit"
+                    className="ca-button"
+                    disabled={loading || !canSubmit}
+                >
                     {loading ? 'Loading...' : (isLogin ? 'Sign In' : 'Sign Up')}
                 </button>
             </form>
@@ -206,6 +289,11 @@ export const AuthForm: React.FC<AuthFormProps> = ({
                         onSwitchMode();
                     } else {
                         setIsLogin(!isLogin);
+                    }
+                    // Reset Turnstile when switching modes
+                    if (turnstileRef.current) {
+                        turnstileRef.current.reset();
+                        setTurnstileToken(null);
                     }
                 }}
                 type="button"

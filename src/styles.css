@@ -347,3 +347,26 @@ button[type="submit"]:disabled {
     justify-content: center;
   }
 }
+
+/* Turnstile Widget */
+.ca-turnstile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+}
+
+.ca-turnstile-hint {
+  font-size: 0.8125rem;
+  color: #6b7280;
+  text-align: center;
+  margin: 0;
+}
+
+/* Locked Input */
+.ca-input-locked {
+  background-color: #f3f4f6;
+  color: #6b7280;
+  cursor: not-allowed;
+}
