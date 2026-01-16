@@ -1,19 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { authClient } from '../client';
 
-// Dynamic import for Turnstile to make it optional
-let TurnstileComponent: any = null;
-let useTurnstile = false;
-
-try {
-    // Try to import Turnstile - will fail if not installed
-    const turnstileModule = require('@marsidev/react-turnstile');
-    TurnstileComponent = turnstileModule.Turnstile;
-    useTurnstile = true;
-} catch (e) {
-    // @marsidev/react-turnstile not installed, Turnstile will be disabled
-}
-
 interface AuthFormProps {
     view?: 'signin' | 'signup';
     client?: typeof authClient;
@@ -61,16 +48,25 @@ export const AuthForm: React.FC<AuthFormProps> = ({
     const [error, setError] = useState<string | null>(null);
     const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
     const turnstileRef = useRef<any>(null);
+    const [TurnstileComponent, setTurnstileComponent] = useState<React.ComponentType<any> | null>(null);
 
     const [mounted, setMounted] = useState(false);
 
+    // Load Turnstile component dynamically
     useEffect(() => {
         setMounted(true);
         setIsLogin(view !== 'signup');
-    }, [view]);
+
+        // Load Turnstile if siteKey is provided
+        if (turnstileSiteKey) {
+            import('@marsidev/react-turnstile')
+                .then(module => setTurnstileComponent(() => module.Turnstile))
+                .catch(() => setTurnstileComponent(null));
+        }
+    }, [view, turnstileSiteKey]);
 
     // Check if Turnstile is required for signup
-    const turnstileEnabled = turnstileSiteKey && useTurnstile && TurnstileComponent;
+    const turnstileEnabled = turnstileSiteKey && TurnstileComponent;
     const turnstileRequired = turnstileEnabled && !isLogin;
     const canSubmit = !turnstileRequired || !!turnstileToken;
 
