@@ -162,20 +162,57 @@ export const createAuth = (config: AuthConfig) => {
         turnstile: turnstileConfig,
         emailNormalization,
         schemaMapping,
+        user,
+        session,
+        account,
+        verification,
+        organization,
+        member,
+        invitation,
         ...rest
     } = config;
 
-    // Map pluralized schema to singular better-auth model names
+    // Resolve table names and create dynamic Drizzle schema
+    const userTableName = schemaMapping?.user?.tableName || "users";
+    const sessionTableName = schemaMapping?.session?.tableName || "sessions";
+    const accountTableName = schemaMapping?.account?.tableName || "accounts";
+    const verificationTableName = schemaMapping?.verification?.tableName || "verifications";
+    const orgTableName = schemaMapping?.organization?.tableName || "organizations";
+    const memberTableName = schemaMapping?.member?.tableName || "members";
+    const invitationTableName = schemaMapping?.invitation?.tableName || "invitations";
+
+    // Resolve user PK field for references
+    const userPkField = schemaMapping?.user?.fields?.id || "id";
+
+    // Create table objects (respecting dependency order)
+    const usersTable = defaultSchema.createUsersTable(userTableName, schemaMapping?.user?.fields);
+    const organizationsTable = defaultSchema.createOrganizationsTable(orgTableName, schemaMapping?.organization?.fields);
+    const sessionsTable = defaultSchema.createSessionsTable(sessionTableName, usersTable, schemaMapping?.session?.fields, userPkField);
+    const accountsTable = defaultSchema.createAccountsTable(accountTableName, usersTable, schemaMapping?.account?.fields, userPkField);
+    const verificationsTable = defaultSchema.createVerificationsTable(verificationTableName, schemaMapping?.verification?.fields);
+    const membersTable = defaultSchema.createMembersTable(memberTableName, organizationsTable, usersTable, schemaMapping?.member?.fields, userPkField);
+    const invitationsTable = defaultSchema.createInvitationsTable(invitationTableName, organizationsTable, usersTable, schemaMapping?.invitation?.fields, userPkField);
+
+    // Determine keys for the schema object (Better Auth uses tableName as modelName if provided)
+    const userKey = schemaMapping?.user?.tableName || "user";
+    const sessionKey = schemaMapping?.session?.tableName || "session";
+    const accountKey = schemaMapping?.account?.tableName || "account";
+    const verificationKey = schemaMapping?.verification?.tableName || "verification";
+    const orgKey = schemaMapping?.organization?.tableName || "organization";
+    const memberKey = schemaMapping?.member?.tableName || "member";
+    const invitationKey = schemaMapping?.invitation?.tableName || "invitation";
+
+    // Map pluralized schema to singular (or custom) better-auth model names
     let adapterOptions: any = {
         provider: provider as any,
         schema: {
-            user: defaultSchema.users,
-            session: defaultSchema.sessions,
-            account: defaultSchema.accounts,
-            verification: defaultSchema.verifications,
-            organization: defaultSchema.organizations,
-            member: defaultSchema.members,
-            invitation: defaultSchema.invitations,
+            [userKey]: usersTable,
+            [sessionKey]: sessionsTable,
+            [accountKey]: accountsTable,
+            [verificationKey]: verificationsTable,
+            [orgKey]: organizationsTable,
+            [memberKey]: membersTable,
+            [invitationKey]: invitationsTable,
         }
     };
 
@@ -199,10 +236,10 @@ export const createAuth = (config: AuthConfig) => {
     // Model configs for Better Auth (using schemaMapping if provided)
     const userConfig = buildModelConfig(schemaMapping?.user);
     const sessionConfig = buildModelConfig(schemaMapping?.session);
-    // Note: account/verification models use the Drizzle schema for table mapping, not modelName
+    const accountConfig = buildModelConfig(schemaMapping?.account);
+    const verificationConfig = buildModelConfig(schemaMapping?.verification);
 
     // Get the user table name for email normalization queries
-    const userTableName = schemaMapping?.user?.tableName || 'users';
     const userIdColumn = schemaMapping?.user?.fields?.id || 'id';
 
     // Extract emailAndPassword from rest if it exists, to merge deeply
@@ -311,9 +348,14 @@ export const createAuth = (config: AuthConfig) => {
         emailAndPassword: emailPasswordOptions,
         // Pass emailVerification config if provided
         ...(emailVerification ? { emailVerification } : {}),
-        // Model configs for custom table/column mapping
-        ...(userConfig ? { user: userConfig } : {}),
-        ...(sessionConfig ? { session: sessionConfig } : {}),
+        // Model configs: Merge schema mapping config with user provided config
+        ...(userConfig || user ? { user: { ...userConfig, ...user } } : {}),
+        ...(sessionConfig || session ? { session: { ...sessionConfig, ...session } } : {}),
+        ...(accountConfig || account ? { account: { ...accountConfig, ...account } } : {}),
+        ...(verificationConfig || verification ? { verification: { ...verificationConfig, ...verification } } : {}),
+        ...(orgKey || organization ? { organization: { ...(schemaMapping?.organization?.tableName ? { modelName: schemaMapping.organization.tableName } : {}), ...organization } } : {}),
+        ...(memberKey || member ? { member: { ...(schemaMapping?.member?.tableName ? { modelName: schemaMapping.member.tableName } : {}), ...member } } : {}),
+        ...(invitationKey || invitation ? { invitation: { ...(schemaMapping?.invitation?.tableName ? { modelName: schemaMapping.invitation.tableName } : {}), ...invitation } } : {}),
         // Merge content-auth hooks with user hooks
         hooks: contentAuthHooks,
         ...otherOptions,
