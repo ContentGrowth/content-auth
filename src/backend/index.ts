@@ -185,13 +185,13 @@ export const createAuth = (config: AuthConfig) => {
     const userPkField = schemaMapping?.user?.fields?.id || "id";
 
     // Create table objects (respecting dependency order)
-    const usersTable = defaultSchema.createUsersTable(userTableName, schemaMapping?.user?.fields);
-    const organizationsTable = defaultSchema.createOrganizationsTable(orgTableName, schemaMapping?.organization?.fields);
-    const sessionsTable = defaultSchema.createSessionsTable(sessionTableName, usersTable, schemaMapping?.session?.fields, userPkField);
-    const accountsTable = defaultSchema.createAccountsTable(accountTableName, usersTable, schemaMapping?.account?.fields, userPkField);
-    const verificationsTable = defaultSchema.createVerificationsTable(verificationTableName, schemaMapping?.verification?.fields);
-    const membersTable = defaultSchema.createMembersTable(memberTableName, organizationsTable, usersTable, schemaMapping?.member?.fields, userPkField);
-    const invitationsTable = defaultSchema.createInvitationsTable(invitationTableName, organizationsTable, usersTable, schemaMapping?.invitation?.fields, userPkField);
+    const usersTable = defaultSchema.createUsersTable(userTableName, schemaMapping?.user?.fields, schemaMapping?.user?.additionalFields);
+    const organizationsTable = defaultSchema.createOrganizationsTable(orgTableName, schemaMapping?.organization?.fields, schemaMapping?.organization?.additionalFields);
+    const sessionsTable = defaultSchema.createSessionsTable(sessionTableName, usersTable, schemaMapping?.session?.fields, userPkField, schemaMapping?.session?.additionalFields);
+    const accountsTable = defaultSchema.createAccountsTable(accountTableName, usersTable, schemaMapping?.account?.fields, userPkField, schemaMapping?.account?.additionalFields);
+    const verificationsTable = defaultSchema.createVerificationsTable(verificationTableName, schemaMapping?.verification?.fields, schemaMapping?.verification?.additionalFields);
+    const membersTable = defaultSchema.createMembersTable(memberTableName, organizationsTable, usersTable, schemaMapping?.member?.fields, userPkField, schemaMapping?.member?.additionalFields);
+    const invitationsTable = defaultSchema.createInvitationsTable(invitationTableName, organizationsTable, usersTable, schemaMapping?.invitation?.fields, userPkField, schemaMapping?.invitation?.additionalFields);
 
     // Determine keys for the schema object (Better Auth uses tableName as modelName if provided)
     const userKey = schemaMapping?.user?.tableName || "user";
