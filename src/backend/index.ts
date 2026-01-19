@@ -23,6 +23,64 @@ export interface EmailNormalizationConfig {
     columnName?: string;
 }
 
+/**
+ * Field attribute for additional fields in custom schema
+ */
+export interface FieldAttribute {
+    type: string | string[];
+    required?: boolean;
+    defaultValue?: any;
+    input?: boolean;
+}
+
+/**
+ * Table mapping configuration for a single model
+ */
+export interface TableMapping {
+    /** Custom table name in the database */
+    tableName?: string;
+    /** Map Better Auth field names to your database column names */
+    fields?: Record<string, string>;
+    /** Additional fields in your custom table */
+    additionalFields?: Record<string, FieldAttribute>;
+}
+
+/**
+ * Custom schema mapping to use existing tables with Better Auth.
+ * This allows you to map Better Auth's default table/column names to your existing database schema.
+ * 
+ * @example
+ * ```typescript
+ * schemaMapping: {
+ *   user: {
+ *     tableName: "tenant_admins",
+ *     fields: { id: "firebase_uid", createdAt: "created_at" },
+ *     additionalFields: { role: { type: "string" }, tenant_id: { type: "string" } }
+ *   },
+ *   organization: {
+ *     tableName: "tenants",
+ *     fields: { id: "tenant_id", metadata: "settings" }
+ *   }
+ * }
+ * ```
+ */
+export interface SchemaMapping {
+    /** Map Better Auth's 'user' model */
+    user?: TableMapping;
+    /** Map Better Auth's 'session' model */
+    session?: TableMapping;
+    /** Map Better Auth's 'account' model */
+    account?: TableMapping;
+    /** Map Better Auth's 'verification' model */
+    verification?: TableMapping;
+    /** Map Better Auth's 'organization' model (from organization plugin) */
+    organization?: TableMapping;
+    /** Map Better Auth's 'member' model (from organization plugin) */
+    member?: TableMapping;
+    /** Map Better Auth's 'invitation' model (from organization plugin) */
+    invitation?: TableMapping;
+}
+
 export interface AuthConfig {
     /**
      * The database instance or D1 binding.
@@ -66,6 +124,12 @@ export interface AuthConfig {
      * Requires a 'normalized_email' column in the users table.
      */
     emailNormalization?: EmailNormalizationConfig;
+    /**
+     * Custom schema mapping to use existing tables with Better Auth.
+     * Maps Better Auth's default table/column names to your existing database schema.
+     * If not provided, uses default table names (users, sessions, accounts, etc.).
+     */
+    schemaMapping?: SchemaMapping;
     // Allow passing other better-auth options
     [key: string]: any;
 }
@@ -97,6 +161,7 @@ export const createAuth = (config: AuthConfig) => {
         emailVerification,
         turnstile: turnstileConfig,
         emailNormalization,
+        schemaMapping,
         ...rest
     } = config;
 
@@ -113,6 +178,32 @@ export const createAuth = (config: AuthConfig) => {
             invitation: defaultSchema.invitations,
         }
     };
+
+    // Build Better Auth model configs from schemaMapping
+    // These use modelName and fields to customize table/column names
+    const buildModelConfig = (mapping?: TableMapping) => {
+        if (!mapping) return undefined;
+        const config: any = {};
+        if (mapping.tableName) {
+            config.modelName = mapping.tableName;
+        }
+        if (mapping.fields) {
+            config.fields = mapping.fields;
+        }
+        if (mapping.additionalFields) {
+            config.additionalFields = mapping.additionalFields;
+        }
+        return Object.keys(config).length > 0 ? config : undefined;
+    };
+
+    // Model configs for Better Auth (using schemaMapping if provided)
+    const userConfig = buildModelConfig(schemaMapping?.user);
+    const sessionConfig = buildModelConfig(schemaMapping?.session);
+    // Note: account/verification models use the Drizzle schema for table mapping, not modelName
+
+    // Get the user table name for email normalization queries
+    const userTableName = schemaMapping?.user?.tableName || 'users';
+    const userIdColumn = schemaMapping?.user?.fields?.id || 'id';
 
     // Extract emailAndPassword from rest if it exists, to merge deeply
     const emailConfig = (rest as any).emailAndPassword || { enabled: true };
@@ -164,7 +255,7 @@ export const createAuth = (config: AuthConfig) => {
                 if (emailNormalization?.enabled && (body as any).email && rawDb?.prepare) {
                     const normalized = normalizeEmail((body as any).email);
                     const existing = await rawDb.prepare(
-                        `SELECT id FROM users WHERE ${normalizedEmailColumn} = ?`
+                        `SELECT ${userIdColumn} FROM ${userTableName} WHERE ${normalizedEmailColumn} = ?`
                     ).bind(normalized).first();
 
                     if (existing) {
@@ -197,7 +288,7 @@ export const createAuth = (config: AuthConfig) => {
                     try {
                         const normalized = normalizeEmail(user.email);
                         await rawDb.prepare(
-                            `UPDATE users SET ${normalizedEmailColumn} = ? WHERE id = ? AND (${normalizedEmailColumn} IS NULL OR ${normalizedEmailColumn} != ?)`
+                            `UPDATE ${userTableName} SET ${normalizedEmailColumn} = ? WHERE ${userIdColumn} = ? AND (${normalizedEmailColumn} IS NULL OR ${normalizedEmailColumn} != ?)`
                         ).bind(normalized, user.id, normalized).run();
                     } catch (e: any) {
                         console.error(`[ContentAuth] Failed to set normalized_email: ${e.message}`);
@@ -220,6 +311,9 @@ export const createAuth = (config: AuthConfig) => {
         emailAndPassword: emailPasswordOptions,
         // Pass emailVerification config if provided
         ...(emailVerification ? { emailVerification } : {}),
+        // Model configs for custom table/column mapping
+        ...(userConfig ? { user: userConfig } : {}),
+        ...(sessionConfig ? { session: sessionConfig } : {}),
         // Merge content-auth hooks with user hooks
         hooks: contentAuthHooks,
         ...otherOptions,
