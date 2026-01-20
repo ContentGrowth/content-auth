@@ -16,6 +16,9 @@ interface Props {
     forgotPasswordUrl?: string;
     turnstileSiteKey?: string;
     redirectUrl?: string;
+    showName?: boolean;
+    signinUrl?: string;
+    signupUrl?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -27,6 +30,7 @@ const props = withDefaults(defineProps<Props>(), {
     socialPosition: 'top',
     defaultEmail: '',
     lockEmail: false,
+    showName: true,
 });
 
 const emit = defineEmits<{
@@ -40,6 +44,7 @@ const client = computed(() => createClient(props.baseUrl));
 const isLogin = ref(props.view !== 'signup');
 const email = ref(props.defaultEmail);
 const password = ref('');
+const confirmPassword = ref('');
 const name = ref('');
 const loading = ref(false);
 const error = ref<string | null>(null);
@@ -61,7 +66,7 @@ const socialClass = computed(() =>
 );
 
 const displayTitle = computed(() => 
-    props.title || (isLogin.value ? 'Welcome Back' : 'Create Account')
+    props.title
 );
 
 const turnstileEnabled = computed(() => !!props.turnstileSiteKey);
@@ -77,6 +82,11 @@ onMounted(() => {
 });
 
 const handleSubmit = async () => {
+    if (!isLogin.value && password.value !== confirmPassword.value) {
+        error.value = 'Passwords do not match';
+        return;
+    }
+
     if (turnstileRequired.value && !turnstileToken.value) {
         error.value = 'Please complete the security challenge';
         return;
@@ -97,8 +107,10 @@ const handleSubmit = async () => {
             const signupData: any = {
                 email: email.value,
                 password: password.value,
-                name: name.value,
             };
+            if (props.showName) {
+                signupData.name = name.value;
+            }
             if (turnstileToken.value) {
                 signupData.turnstileToken = turnstileToken.value;
             }
@@ -154,8 +166,19 @@ const handleSocialLogin = async (provider: string) => {
 };
 
 const switchMode = () => {
+    // Navigate to separate auth pages if URLs provided
+    if (isLogin.value && props.signupUrl) {
+        window.location.href = props.signupUrl;
+        return;
+    }
+    if (!isLogin.value && props.signinUrl) {
+        window.location.href = props.signinUrl;
+        return;
+    }
+    
     isLogin.value = !isLogin.value;
     error.value = null;
+    confirmPassword.value = '';
     turnstileToken.value = null;
     emit('switchMode');
 };
@@ -172,7 +195,7 @@ const handleTurnstileError = () => {
 
 <template>
     <div :class="containerClass">
-        <h2 class="ca-title">{{ displayTitle }}</h2>
+        <h2 v-if="displayTitle" class="ca-title">{{ displayTitle }}</h2>
 
         <!-- Default Layout -->
         <template v-if="layout !== 'split'">
@@ -199,7 +222,7 @@ const handleTurnstileError = () => {
 
             <!-- Form -->
             <form class="ca-form" @submit.prevent="handleSubmit">
-                <div v-if="!isLogin" class="ca-input-group">
+                <div v-if="!isLogin && showName" class="ca-input-group">
                     <label class="ca-label" for="name">Name</label>
                     <input
                         id="name"
@@ -232,6 +255,17 @@ const handleTurnstileError = () => {
                     <input
                         id="password"
                         v-model="password"
+                        type="password"
+                        class="ca-input"
+                        required
+                    />
+                </div>
+
+                <div v-if="!isLogin" class="ca-input-group">
+                    <label class="ca-label" for="confirm-password">Confirm Password</label>
+                    <input
+                        id="confirm-password"
+                        v-model="confirmPassword"
                         type="password"
                         class="ca-input"
                         required
@@ -289,7 +323,7 @@ const handleTurnstileError = () => {
             <div class="ca-split-body">
                 <div class="ca-split-main">
                     <form class="ca-form" @submit.prevent="handleSubmit">
-                        <div v-if="!isLogin" class="ca-input-group">
+                        <div v-if="!isLogin && showName" class="ca-input-group">
                             <label class="ca-label" for="name">Name</label>
                             <input id="name" v-model="name" type="text" class="ca-input" required />
                         </div>
@@ -303,6 +337,13 @@ const handleTurnstileError = () => {
                                 <a v-if="isLogin && forgotPasswordUrl" :href="forgotPasswordUrl" class="ca-forgot-link">Forgot password?</a>
                             </div>
                             <input id="password" v-model="password" type="password" class="ca-input" required />
+                        </div>
+                        <div v-if="!isLogin" class="ca-input-group">
+                            <label class="ca-label" for="confirm-password">Confirm Password</label>
+                            <input id="confirm-password" v-model="confirmPassword" type="password" class="ca-input" required />
+                        </div>
+                        <div v-if="turnstileSiteKey && !isLogin" class="ca-turnstile">
+                            <p class="ca-turnstile-hint">Please complete the security check above</p>
                         </div>
                         <div v-if="error" class="ca-error">{{ error }}</div>
                         <button type="submit" class="ca-button" :disabled="loading || !canSubmit">

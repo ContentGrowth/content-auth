@@ -21,6 +21,14 @@ interface AuthFormProps {
     forgotPasswordUrl?: string;
     /** Cloudflare Turnstile site key. When set, shows Turnstile widget on signup. */
     turnstileSiteKey?: string;
+    /** URL to redirect to after successful authentication */
+    redirectUrl?: string;
+    /** Whether to show the name field on signup (default: true) */
+    showName?: boolean;
+    /** URL to navigate to for signin (if set, navigates instead of switching mode inline) */
+    signinUrl?: string;
+    /** URL to navigate to for signup (if set, navigates instead of switching mode inline) */
+    signupUrl?: string;
 }
 
 export const AuthForm: React.FC<AuthFormProps> = ({
@@ -38,11 +46,16 @@ export const AuthForm: React.FC<AuthFormProps> = ({
     defaultEmail = '',
     lockEmail = false,
     forgotPasswordUrl,
-    turnstileSiteKey
+    turnstileSiteKey,
+    redirectUrl,
+    showName = true,
+    signinUrl,
+    signupUrl
 }) => {
     const [isLogin, setIsLogin] = useState(view !== 'signup');
     const [email, setEmail] = useState(defaultEmail);
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [name, setName] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -87,6 +100,11 @@ export const AuthForm: React.FC<AuthFormProps> = ({
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
+        if (!isLogin && password !== confirmPassword) {
+            setError('Passwords do not match');
+            return;
+        }
+
         if (turnstileRequired && !turnstileToken) {
             setError('Please complete the security challenge');
             return;
@@ -108,8 +126,10 @@ export const AuthForm: React.FC<AuthFormProps> = ({
                 const signupData: any = {
                     email,
                     password,
-                    name,
                 };
+                if (showName) {
+                    signupData.name = name;
+                }
                 if (turnstileToken) {
                     signupData.turnstileToken = turnstileToken;
                 }
@@ -117,6 +137,10 @@ export const AuthForm: React.FC<AuthFormProps> = ({
                 if (response.error) throw response.error;
             }
             onSuccess?.(response.data);
+
+            if (redirectUrl) {
+                window.location.href = redirectUrl;
+            }
         } catch (err: any) {
             // Map error codes/messages to user-friendly messages
             const errorMessage = err.message || '';
@@ -161,7 +185,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({
         try {
             await client.signIn.social({
                 provider: provider as any,
-                callbackURL: window.location.href
+                callbackURL: redirectUrl || window.location.href
             });
         } catch (err: any) {
             setError(err.message || `Failed to sign in with ${provider}`);
@@ -242,7 +266,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({
 
         return (
             <form onSubmit={handleSubmit} className="ca-form">
-                {!isLogin && (
+                {!isLogin && showName && (
                     <div className="ca-input-group">
                         <label className="ca-label" htmlFor="name">Name</label>
                         <input
@@ -286,6 +310,20 @@ export const AuthForm: React.FC<AuthFormProps> = ({
                     />
                 </div>
 
+                {!isLogin && (
+                    <div className="ca-input-group">
+                        <label className="ca-label" htmlFor="confirm-password">Confirm Password</label>
+                        <input
+                            id="confirm-password"
+                            type="password"
+                            className="ca-input"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            required
+                        />
+                    </div>
+                )}
+
                 {/* Turnstile widget for signup */}
                 {renderTurnstile()}
 
@@ -308,12 +346,23 @@ export const AuthForm: React.FC<AuthFormProps> = ({
             <button
                 className="ca-link"
                 onClick={() => {
+                    // Navigate to separate auth pages if URLs provided
+                    if (isLogin && signupUrl) {
+                        window.location.href = signupUrl;
+                        return;
+                    }
+                    if (!isLogin && signinUrl) {
+                        window.location.href = signinUrl;
+                        return;
+                    }
+
                     if (onSwitchMode) {
                         onSwitchMode();
                     } else {
                         setIsLogin(!isLogin);
                     }
-                    // Reset Turnstile when switching modes
+                    // Reset confirm password and Turnstile when switching modes
+                    setConfirmPassword('');
                     if (turnstileRef.current) {
                         turnstileRef.current.reset();
                         setTurnstileToken(null);
@@ -328,9 +377,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({
 
     const titleContent = title ? (
         typeof title === 'string' ? <h2 className="ca-title">{title}</h2> : title
-    ) : (
-        <h2 className="ca-title">{isLogin ? 'Welcome Back' : 'Create Account'}</h2>
-    );
+    ) : null;
 
     if (layout === 'split') {
         return (
@@ -341,7 +388,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({
                         {renderForm()}
                         {renderFooter()}
                     </div>
-                    {socialProviders.length > 0 && (
+                    {!lockEmail && socialProviders.length > 0 && (
                         <>
                             <div className="ca-split-divider">
                                 <span className="ca-split-divider-text">Or</span>
