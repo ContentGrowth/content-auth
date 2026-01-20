@@ -38,108 +38,108 @@ const createAdditionalColumns = (additionalFields?: Record<string, any>) => {
 
 // Helper to create users table with custom name
 export const createUsersTable = (tableName = "users", fields?: Record<string, string>, additionalFields?: Record<string, any>) => sqliteTable(tableName, {
-    [fields?.id || "id"]: text(fields?.id || "id").primaryKey(),
-    name: text(fields?.name || "name").notNull(),
+    id: text(fields?.id || "id").primaryKey(),
+    [fields?.name || "name"]: text(fields?.name || "name").notNull(),
     [fields?.email || "email"]: text(fields?.email || "email").notNull().unique(),
     [fields?.emailVerified || "emailVerified"]: integer(fields?.emailVerified || "emailVerified", { mode: "boolean" }).notNull(),
-    image: text(fields?.image || "image"),
+    [fields?.image || "image"]: text(fields?.image || "image"),
     [fields?.createdAt || "createdAt"]: integer(fields?.createdAt || "createdAt", { mode: "timestamp" }).notNull(),
     [fields?.updatedAt || "updatedAt"]: integer(fields?.updatedAt || "updatedAt", { mode: "timestamp" }).notNull(),
     ...createAdditionalColumns(additionalFields)
 });
 
 // Helper to create sessions table with custom name and users reference
-export const createSessionsTable = (tableName = "sessions", usersTableOrFn: any = users, fields?: Record<string, string>, userPkField = "id", additionalFields?: Record<string, any>) => {
+export const createSessionsTable = (tableName = "sessions", usersTableOrFn: any = users, fields?: Record<string, string>, additionalFields?: Record<string, any>) => {
     // resolve users table if lazy
     const usersTable = typeof usersTableOrFn === 'function' ? usersTableOrFn() : usersTableOrFn;
 
     return sqliteTable(tableName, {
-        [fields?.id || "id"]: text(fields?.id || "id").primaryKey(),
-        expiresAt: integer(fields?.expiresAt || "expiresAt", { mode: "timestamp" }).notNull(),
-        token: text(fields?.token || "token").notNull().unique(),
-        createdAt: integer(fields?.createdAt || "createdAt", { mode: "timestamp" }).notNull(),
-        updatedAt: integer(fields?.updatedAt || "updatedAt", { mode: "timestamp" }).notNull(),
-        ipAddress: text(fields?.ipAddress || "ipAddress"),
-        userAgent: text(fields?.userAgent || "userAgent"),
-        userId: text(fields?.userId || "userId").notNull().references(() => usersTable[userPkField], { onDelete: 'cascade' }),
-        activeOrganizationId: text(fields?.activeOrganizationId || "activeOrganizationId"),
+        id: text(fields?.id || "id").primaryKey(),
+        [fields?.expiresAt || "expiresAt"]: integer(fields?.expiresAt || "expiresAt", { mode: "timestamp" }).notNull(),
+        [fields?.token || "token"]: text(fields?.token || "token").notNull().unique(),
+        [fields?.createdAt || "createdAt"]: integer(fields?.createdAt || "createdAt", { mode: "timestamp" }).notNull(),
+        [fields?.updatedAt || "updatedAt"]: integer(fields?.updatedAt || "updatedAt", { mode: "timestamp" }).notNull(),
+        [fields?.ipAddress || "ipAddress"]: text(fields?.ipAddress || "ipAddress"),
+        [fields?.userAgent || "userAgent"]: text(fields?.userAgent || "userAgent"),
+        [fields?.userId || "userId"]: text(fields?.userId || "userId").notNull().references(() => usersTable.id, { onDelete: 'cascade' }),
+        [fields?.activeOrganizationId || "activeOrganizationId"]: text(fields?.activeOrganizationId || "activeOrganizationId"),
         ...createAdditionalColumns(additionalFields)
     });
 };
 
 // Helper to create accounts table
-export const createAccountsTable = (tableName = "accounts", usersTableOrFn: any = users, fields?: Record<string, string>, userPkField = "id", additionalFields?: Record<string, any>) => {
+export const createAccountsTable = (tableName = "accounts", usersTableOrFn: any = users, fields?: Record<string, string>, additionalFields?: Record<string, any>) => {
     const usersTable = typeof usersTableOrFn === 'function' ? usersTableOrFn() : usersTableOrFn;
 
     return sqliteTable(tableName, {
-        [fields?.id || "id"]: text(fields?.id || "id").primaryKey(),
-        accountId: text(fields?.accountId || "accountId").notNull(),
-        providerId: text(fields?.providerId || "providerId").notNull(),
-        userId: text(fields?.userId || "userId").notNull().references(() => usersTable[userPkField], { onDelete: 'cascade' }),
-        accessToken: text(fields?.accessToken || "accessToken"),
-        refreshToken: text(fields?.refreshToken || "refreshToken"),
-        idToken: text(fields?.idToken || "idToken"),
-        accessTokenExpiresAt: integer(fields?.accessTokenExpiresAt || "accessTokenExpiresAt", { mode: "timestamp" }),
-        refreshTokenExpiresAt: integer(fields?.refreshTokenExpiresAt || "refreshTokenExpiresAt", { mode: "timestamp" }),
-        scope: text(fields?.scope || "scope"),
-        password: text(fields?.password || "password"),
-        createdAt: integer(fields?.createdAt || "createdAt", { mode: "timestamp" }).notNull(),
-        updatedAt: integer(fields?.updatedAt || "updatedAt", { mode: "timestamp" }).notNull(),
+        id: text(fields?.id || "id").primaryKey(),
+        [fields?.accountId || "accountId"]: text(fields?.accountId || "accountId").notNull(),
+        [fields?.providerId || "providerId"]: text(fields?.providerId || "providerId").notNull(),
+        [fields?.userId || "userId"]: text(fields?.userId || "userId").notNull().references(() => usersTable.id, { onDelete: 'cascade' }),
+        [fields?.accessToken || "accessToken"]: text(fields?.accessToken || "accessToken"),
+        [fields?.refreshToken || "refreshToken"]: text(fields?.refreshToken || "refreshToken"),
+        [fields?.idToken || "idToken"]: text(fields?.idToken || "idToken"),
+        [fields?.accessTokenExpiresAt || "accessTokenExpiresAt"]: integer(fields?.accessTokenExpiresAt || "accessTokenExpiresAt", { mode: "timestamp" }),
+        [fields?.refreshTokenExpiresAt || "refreshTokenExpiresAt"]: integer(fields?.refreshTokenExpiresAt || "refreshTokenExpiresAt", { mode: "timestamp" }),
+        [fields?.scope || "scope"]: text(fields?.scope || "scope"),
+        [fields?.password || "password"]: text(fields?.password || "password"),
+        [fields?.createdAt || "createdAt"]: integer(fields?.createdAt || "createdAt", { mode: "timestamp" }).notNull(),
+        [fields?.updatedAt || "updatedAt"]: integer(fields?.updatedAt || "updatedAt", { mode: "timestamp" }).notNull(),
         ...createAdditionalColumns(additionalFields)
     });
 };
 
 // Helper to create verifications table
 export const createVerificationsTable = (tableName = "verifications", fields?: Record<string, string>, additionalFields?: Record<string, any>) => sqliteTable(tableName, {
-    [fields?.id || "id"]: text(fields?.id || "id").primaryKey(),
-    identifier: text(fields?.identifier || "identifier").notNull(),
-    value: text(fields?.value || "value").notNull(),
-    expiresAt: integer(fields?.expiresAt || "expiresAt", { mode: "timestamp" }).notNull(),
-    createdAt: integer(fields?.createdAt || "createdAt", { mode: "timestamp" }),
-    updatedAt: integer(fields?.updatedAt || "updatedAt", { mode: "timestamp" }),
+    id: text(fields?.id || "id").primaryKey(),
+    [fields?.identifier || "identifier"]: text(fields?.identifier || "identifier").notNull(),
+    [fields?.value || "value"]: text(fields?.value || "value").notNull(),
+    [fields?.expiresAt || "expiresAt"]: integer(fields?.expiresAt || "expiresAt", { mode: "timestamp" }).notNull(),
+    [fields?.createdAt || "createdAt"]: integer(fields?.createdAt || "createdAt", { mode: "timestamp" }),
+    [fields?.updatedAt || "updatedAt"]: integer(fields?.updatedAt || "updatedAt", { mode: "timestamp" }),
     ...createAdditionalColumns(additionalFields)
 });
 
 // Helper to create organizations table
 export const createOrganizationsTable = (tableName = "organizations", fields?: Record<string, string>, additionalFields?: Record<string, any>) => sqliteTable(tableName, {
-    [fields?.id || "id"]: text(fields?.id || "id").primaryKey(),
-    name: text(fields?.name || "name").notNull(),
-    slug: text(fields?.slug || "slug").unique(),
-    logo: text(fields?.logo || "logo"),
-    createdAt: integer(fields?.createdAt || "createdAt", { mode: "timestamp" }).notNull(),
-    metadata: text(fields?.metadata || "metadata"),
+    id: text(fields?.id || "id").primaryKey(),
+    [fields?.name || "name"]: text(fields?.name || "name").notNull(),
+    [fields?.slug || "slug"]: text(fields?.slug || "slug").unique(),
+    [fields?.logo || "logo"]: text(fields?.logo || "logo"),
+    [fields?.createdAt || "createdAt"]: integer(fields?.createdAt || "createdAt", { mode: "timestamp" }).notNull(),
+    [fields?.metadata || "metadata"]: text(fields?.metadata || "metadata"),
     ...createAdditionalColumns(additionalFields)
 });
 
 // Helper to create members table
-export const createMembersTable = (tableName = "members", organizationsTableOrFn: any = organizations, usersTableOrFn: any = users, fields?: Record<string, string>, userPkField = "id", additionalFields?: Record<string, any>) => {
+export const createMembersTable = (tableName = "members", organizationsTableOrFn: any = organizations, usersTableOrFn: any = users, fields?: Record<string, string>, additionalFields?: Record<string, any>) => {
     const organizationsTable = typeof organizationsTableOrFn === 'function' ? organizationsTableOrFn() : organizationsTableOrFn;
     const usersTable = typeof usersTableOrFn === 'function' ? usersTableOrFn() : usersTableOrFn;
 
     return sqliteTable(tableName, {
-        [fields?.id || "id"]: text(fields?.id || "id").primaryKey(),
-        organizationId: text(fields?.organizationId || "organizationId").notNull().references(() => organizationsTable[fields?.organizationId || "id"] || organizationsTable.id, { onDelete: 'cascade' }), // Partial fix for org FK too?
-        userId: text(fields?.userId || "userId").notNull().references(() => usersTable[userPkField], { onDelete: 'cascade' }),
-        role: text(fields?.role || "role").notNull(),
-        createdAt: integer(fields?.createdAt || "createdAt", { mode: "timestamp" }).notNull(),
+        id: text(fields?.id || "id").primaryKey(),
+        [fields?.organizationId || "organizationId"]: text(fields?.organizationId || "organizationId").notNull().references(() => organizationsTable.id, { onDelete: 'cascade' }),
+        [fields?.userId || "userId"]: text(fields?.userId || "userId").notNull().references(() => usersTable.id, { onDelete: 'cascade' }),
+        [fields?.role || "role"]: text(fields?.role || "role").notNull(),
+        [fields?.createdAt || "createdAt"]: integer(fields?.createdAt || "createdAt", { mode: "timestamp" }).notNull(),
         ...createAdditionalColumns(additionalFields)
     });
 };
 
 // Helper to create invitations table
-export const createInvitationsTable = (tableName = "invitations", organizationsTableOrFn: any = organizations, usersTableOrFn: any = users, fields?: Record<string, string>, userPkField = "id", additionalFields?: Record<string, any>) => {
+export const createInvitationsTable = (tableName = "invitations", organizationsTableOrFn: any = organizations, usersTableOrFn: any = users, fields?: Record<string, string>, additionalFields?: Record<string, any>) => {
     const organizationsTable = typeof organizationsTableOrFn === 'function' ? organizationsTableOrFn() : organizationsTableOrFn;
     const usersTable = typeof usersTableOrFn === 'function' ? usersTableOrFn() : usersTableOrFn;
 
     return sqliteTable(tableName, {
-        [fields?.id || "id"]: text(fields?.id || "id").primaryKey(),
-        organizationId: text(fields?.organizationId || "organizationId").notNull().references(() => organizationsTable[fields?.organizationId || "id"] || organizationsTable.id, { onDelete: 'cascade' }),
-        email: text(fields?.email || "email").notNull(),
-        role: text(fields?.role || "role"),
-        status: text(fields?.status || "status").notNull(),
-        expiresAt: integer(fields?.expiresAt || "expiresAt", { mode: "timestamp" }).notNull(),
-        inviterId: text(fields?.inviterId || "inviterId").notNull().references(() => usersTable[userPkField], { onDelete: 'cascade' }),
-        createdAt: integer(fields?.createdAt || "createdAt", { mode: "timestamp" }).notNull(),
+        id: text(fields?.id || "id").primaryKey(),
+        [fields?.organizationId || "organizationId"]: text(fields?.organizationId || "organizationId").notNull().references(() => organizationsTable.id, { onDelete: 'cascade' }),
+        [fields?.email || "email"]: text(fields?.email || "email").notNull(),
+        [fields?.role || "role"]: text(fields?.role || "role"),
+        [fields?.status || "status"]: text(fields?.status || "status").notNull(),
+        [fields?.expiresAt || "expiresAt"]: integer(fields?.expiresAt || "expiresAt", { mode: "timestamp" }).notNull(),
+        [fields?.inviterId || "inviterId"]: text(fields?.inviterId || "inviterId").notNull().references(() => usersTable.id, { onDelete: 'cascade' }),
+        [fields?.createdAt || "createdAt"]: integer(fields?.createdAt || "createdAt", { mode: "timestamp" }).notNull(),
         ...createAdditionalColumns(additionalFields)
     });
 };
