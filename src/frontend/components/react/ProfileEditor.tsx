@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { authClient } from '../client';
+import { authClient } from '../../client';
 
 export interface ProfileEditorProps {
     client?: typeof authClient;

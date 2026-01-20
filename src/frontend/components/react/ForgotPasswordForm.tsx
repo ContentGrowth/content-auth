@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { authClient } from '../client';
+import { authClient } from '../../client';
 
 interface ForgotPasswordFormProps {
     client?: typeof authClient;

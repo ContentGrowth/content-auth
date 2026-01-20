@@ -1,0 +1,254 @@
+---
+// CreateOrganizationForm Component
+export interface CreateOrganizationFormProps {
+    baseUrl?: string;
+    className?: string;
+}
+
+// OrganizationSwitcher Component
+export interface OrganizationSwitcherProps {
+    baseUrl?: string;
+    currentOrgId?: string;
+    className?: string;
+}
+
+// InviteMemberForm Component
+export interface InviteMemberFormProps {
+    baseUrl?: string;
+    className?: string;
+}
+
+export type Props = 
+    | { component: 'create'; props?: CreateOrganizationFormProps }
+    | { component: 'switcher'; props?: OrganizationSwitcherProps }
+    | { component: 'invite'; props?: InviteMemberFormProps };
+
+const { component, props = {} } = Astro.props;
+const baseUrl = (props as any).baseUrl || '';
+const className = (props as any).className || '';
+const currentOrgId = (props as any).currentOrgId || '';
+---
+
+{component === 'create' && (
+    <form class={`ca-form ${className}`} data-create-org-form data-base-url={baseUrl}>
+        <h3 class="ca-subtitle">Create Organization</h3>
+        <div class="ca-input-group">
+            <label class="ca-label">Organization Name</label>
+            <input
+                type="text"
+                class="ca-input"
+                name="name"
+                required
+                placeholder="Acme Corp"
+                data-name-input
+            />
+        </div>
+        <div class="ca-input-group">
+            <label class="ca-label">Slug</label>
+            <input
+                type="text"
+                class="ca-input"
+                name="slug"
+                required
+                placeholder="acme-corp"
+                data-slug-input
+            />
+        </div>
+        <div class="ca-error" data-error-message style="display: none;"></div>
+        <div class="ca-success-message" data-success-message style="display: none; padding: 0.75rem; background: #d1fae5; border-radius: 6px; color: #065f46; text-align: center;">
+            Organization created!
+        </div>
+        <button type="submit" class="ca-button" data-submit-button>
+            Create Organization
+        </button>
+    </form>
+)}
+
+{component === 'switcher' && (
+    <div class={`ca-org-switcher ${className}`} data-org-switcher data-base-url={baseUrl} data-current-org-id={currentOrgId}>
+        <label class="ca-label">Select Organization</label>
+        <select class="ca-select" data-org-select disabled>
+            <option value="">Loading...</option>
+        </select>
+    </div>
+)}
+
+{component === 'invite' && (
+    <form class={`ca-form ${className}`} data-invite-member-form data-base-url={baseUrl}>
+        <h3 class="ca-subtitle">Invite Member</h3>
+        <div class="ca-input-group">
+            <label class="ca-label">Email Address</label>
+            <input
+                type="email"
+                class="ca-input"
+                name="email"
+                required
+                placeholder="colleague@example.com"
+            />
+        </div>
+        <div class="ca-input-group">
+            <label class="ca-label">Role</label>
+            <select class="ca-select" name="role">
+                <option value="member">Member</option>
+                <option value="admin">Admin</option>
+                <option value="owner">Owner</option>
+            </select>
+        </div>
+        <div class="ca-error" data-error-message style="display: none;"></div>
+        <div class="ca-success-message" data-success-message style="display: none; padding: 0.75rem; background: #d1fae5; border-radius: 6px; color: #065f46; text-align: center;">
+            Invitation sent!
+        </div>
+        <button type="submit" class="ca-button" data-submit-button>
+            Send Invite
+        </button>
+    </form>
+)}
+
+<script>
+import { createClient } from '../../clients/astro-client';
+
+// Create Organization Form
+document.querySelectorAll('[data-create-org-form]').forEach((form) => {
+    const baseUrl = form.getAttribute('data-base-url') || undefined;
+    const client = createClient(baseUrl);
+    
+    const nameInput = form.querySelector('[data-name-input]') as HTMLInputElement;
+    const slugInput = form.querySelector('[data-slug-input]') as HTMLInputElement;
+    const submitBtn = form.querySelector('[data-submit-button]') as HTMLButtonElement;
+    const errorDiv = form.querySelector('[data-error-message]') as HTMLDivElement;
+    const successDiv = form.querySelector('[data-success-message]') as HTMLDivElement;
+
+    // Auto-slugify
+    nameInput?.addEventListener('input', () => {
+        if (!slugInput.value || slugInput.dataset.autoSlug !== 'false') {
+            slugInput.value = nameInput.value.toLowerCase().replace(/\s+/g, '-');
+            slugInput.dataset.autoSlug = 'true';
+        }
+    });
+
+    slugInput?.addEventListener('input', () => {
+        slugInput.dataset.autoSlug = 'false';
+    });
+
+    const showError = (message: string) => {
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+        successDiv.style.display = 'none';
+    };
+
+    const showSuccess = () => {
+        successDiv.style.display = 'block';
+        errorDiv.style.display = 'none';
+    };
+
+    const setLoading = (loading: boolean) => {
+        submitBtn.disabled = loading;
+        submitBtn.textContent = loading ? 'Creating...' : 'Create Organization';
+    };
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const formData = new FormData(form as HTMLFormElement);
+        const name = formData.get('name') as string;
+        const slug = formData.get('slug') as string;
+
+        setLoading(true);
+
+        try {
+            const result = await client.organization.create({ name, slug });
+            if (result.error) throw result.error;
+            (form as HTMLFormElement).reset();
+            showSuccess();
+        } catch (err: any) {
+            showError(err.message || 'Failed to create organization');
+        } finally {
+            setLoading(false);
+        }
+    });
+});
+
+// Organization Switcher
+document.querySelectorAll('[data-org-switcher]').forEach(async (container) => {
+    const baseUrl = container.getAttribute('data-base-url') || undefined;
+    const currentOrgId = container.getAttribute('data-current-org-id') || '';
+    const client = createClient(baseUrl);
+    const select = container.querySelector('[data-org-select]') as HTMLSelectElement;
+
+    try {
+        const { data } = await client.organization.list({});
+        if (data && data.length > 0) {
+            select.innerHTML = '<option value="" disabled>Select an organization</option>';
+            data.forEach((org: any) => {
+                const option = document.createElement('option');
+                option.value = org.id;
+                option.textContent = org.name;
+                if (org.id === currentOrgId) option.selected = true;
+                select.appendChild(option);
+            });
+            select.disabled = false;
+        } else {
+            select.innerHTML = '<option value="" disabled>No organizations</option>';
+        }
+    } catch (err) {
+        select.innerHTML = '<option value="" disabled>Failed to load</option>';
+    }
+
+    select?.addEventListener('change', async () => {
+        const orgId = select.value;
+        if (!orgId) return;
+        await client.organization.setActive({ organizationId: orgId });
+        window.dispatchEvent(new CustomEvent('org-switched', { detail: { orgId } }));
+    });
+});
+
+// Invite Member Form
+document.querySelectorAll('[data-invite-member-form]').forEach((form) => {
+    const baseUrl = form.getAttribute('data-base-url') || undefined;
+    const client = createClient(baseUrl);
+    
+    const submitBtn = form.querySelector('[data-submit-button]') as HTMLButtonElement;
+    const errorDiv = form.querySelector('[data-error-message]') as HTMLDivElement;
+    const successDiv = form.querySelector('[data-success-message]') as HTMLDivElement;
+
+    const showError = (message: string) => {
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+        successDiv.style.display = 'none';
+    };
+
+    const showSuccess = () => {
+        successDiv.style.display = 'block';
+        errorDiv.style.display = 'none';
+    };
+
+    const setLoading = (loading: boolean) => {
+        submitBtn.disabled = loading;
+        submitBtn.textContent = loading ? 'Sending Invite...' : 'Send Invite';
+    };
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const formData = new FormData(form as HTMLFormElement);
+        const email = formData.get('email') as string;
+        const role = formData.get('role') as string;
+
+        setLoading(true);
+
+        try {
+            const result = await client.organization.inviteMember({
+                email,
+                role: role as any
+            });
+            if (result.error) throw result.error;
+            (form as HTMLFormElement).reset();
+            showSuccess();
+        } catch (err: any) {
+            showError(err.message || 'Invitation failed');
+        } finally {
+            setLoading(false);
+        }
+    });
+});
+</script>

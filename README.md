@@ -153,13 +153,79 @@ export default function App() {
 You can also use the `authClient` directly for custom implementations:
 
 ```typescript
-import { authClient } from '@contentgrowth/content-auth/client';
-
 // Example: Sign in with email
 await authClient.signIn.email({
     email: "user@example.com",
     password: "password123"
 });
+```
+
+### 3. Frontend Setup (Astro)
+
+Import components directly in your Astro pages. They use standard HTML/JS and don't require any framework integrations.
+
+```astro
+---
+import { AuthForm } from '@contentgrowth/content-auth/astro/components/AuthForm.astro';
+import '@contentgrowth/content-auth/styles.css';
+---
+
+<div class="min-h-screen flex items-center justify-center bg-gray-50">
+  <div class="max-w-md w-full">
+    <h1 class="text-2xl font-bold text-center mb-6">Welcome Back</h1>
+    
+    <AuthForm 
+      view="signin" 
+      baseUrl="http://localhost:8787" <!-- Your backend URL -->
+      redirectUrl="/dashboard"
+    />
+  </div>
+</div>
+```
+
+**Client Usage (Vanilla JS):**
+
+```typescript
+import { authClient } from '@contentgrowth/content-auth/astro/client';
+
+await authClient.signIn.email({ ... });
+```
+
+### 4. Frontend Setup (Vue)
+
+Import components in your Vue 3 application.
+
+```vue
+<script setup>
+import { AuthForm } from '@contentgrowth/content-auth/vue';
+import '@contentgrowth/content-auth/styles.css';
+
+const handleSuccess = (data) => {
+  console.log('User authenticated!', data);
+  window.location.href = '/dashboard';
+};
+</script>
+
+<template>
+  <div class="min-h-screen flex items-center justify-center bg-gray-50">
+    <div class="max-w-md w-full">
+      <h1 class="text-2xl font-bold text-center mb-6">Welcome Back</h1>
+      
+      <AuthForm 
+        view="signin"
+        @success="handleSuccess"
+      />
+    </div>
+  </div>
+</template>
+```
+
+**Client Usage (Vue):**
+
+```typescript
+import { authClient } from '@contentgrowth/content-auth/vue/client';
+
+await authClient.signIn.email({ ... });
 ```
 
 ## Database Setup

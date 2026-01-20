@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { authClient } from '../client';
+import { authClient } from '../../client';
 
 interface AuthFormProps {
     view?: 'signin' | 'signup';

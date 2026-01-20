@@ -1,6 +1,6 @@
 {
     "name": "@contentgrowth/content-auth",
-    "version": "0.4.9",
+    "version": "0.5.1",
     "description": "Better Auth wrapper with UI components for Cloudflare Workers & Pages. Includes custom schema mapping, Turnstile bot protection, and email normalization.",
     "type": "module",
     "main": "./dist/index.js",
@@ -26,6 +26,24 @@
             "types": "./dist/frontend/client.d.ts",
             "import": "./dist/frontend/client.js"
         },
+        "./astro": {
+            "types": "./dist/frontend/astro.d.ts",
+            "import": "./dist/frontend/astro.js"
+        },
+        "./astro/client": {
+            "types": "./dist/frontend/clients/astro-client.d.ts",
+            "import": "./dist/frontend/clients/astro-client.js"
+        },
+        "./vue": {
+            "types": "./dist/frontend/vue.d.ts",
+            "import": "./dist/frontend/vue.js"
+        },
+        "./vue/client": {
+            "types": "./dist/frontend/clients/vue-client.d.ts",
+            "import": "./dist/frontend/clients/vue-client.js"
+        },
+        "./astro/components/*": "./dist/frontend/components/astro/*",
+        "./vue/components/*": "./dist/frontend/components/vue/*",
         "./styles.css": "./dist/styles.css"
     },
     "files": [
@@ -35,7 +53,7 @@
         "LICENSE"
     ],
     "scripts": {
-        "build": "tsup && cp src/styles.css dist/styles.css",
+        "build": "tsup && cp src/styles.css dist/styles.css && mkdir -p dist/frontend/components && cp -r src/frontend/components/vue dist/frontend/components/ && cp -r src/frontend/components/astro dist/frontend/components/",
         "dev": "tsup --watch",
         "prepublishOnly": "npm run build"
     },
@@ -45,14 +63,17 @@
         "cloudflare",
         "workers",
         "pages",
-        "react"
+        "react",
+        "astro",
+        "vue"
     ],
     "author": "Content Growth",
     "license": "MIT",
     "peerDependencies": {
         "@marsidev/react-turnstile": ">=0.5.0",
         "react": "^18.0.0 || ^19.0.0",
-        "react-dom": "^18.0.0 || ^19.0.0"
+        "react-dom": "^18.0.0 || ^19.0.0",
+        "vue": "^3.3.0"
     },
     "peerDependenciesMeta": {
         "@marsidev/react-turnstile": {
@@ -62,6 +83,9 @@
             "optional": true
         },
         "react-dom": {
+            "optional": true
+        },
+        "vue": {
             "optional": true
         }
     },
@@ -77,9 +101,11 @@
         "@types/node": "^25.0.3",
         "@types/react": "^19.2.7",
         "@types/react-dom": "^19.2.3",
+        "esbuild-plugin-vue": "^0.2.4",
         "react": "^19.2.3",
         "react-dom": "^19.2.3",
         "tsup": "^8.5.1",
-        "typescript": "^5.9.3"
+        "typescript": "^5.9.3",
+        "vue": "^3.5.27"
     }
 }

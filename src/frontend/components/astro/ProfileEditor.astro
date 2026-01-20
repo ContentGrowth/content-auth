@@ -1,0 +1,133 @@
+---
+export interface Props {
+    baseUrl?: string;
+    defaultName?: string;
+    defaultImage?: string;
+    className?: string;
+}
+
+const { 
+    baseUrl, 
+    defaultName = '', 
+    defaultImage = '',
+    className = '' 
+} = Astro.props;
+---
+
+<form class={`ca-form ${className}`} data-profile-editor data-base-url={baseUrl}>
+    <div class="ca-input-group">
+        <label class="ca-label" for="profile-name">Name</label>
+        <input
+            id="profile-name"
+            type="text"
+            class="ca-input"
+            name="name"
+            placeholder="Your Name"
+            value={defaultName}
+        />
+    </div>
+
+    <div class="ca-input-group">
+        <label class="ca-label" for="profile-image">Avatar URL</label>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <input
+                id="profile-image"
+                type="url"
+                class="ca-input"
+                name="image"
+                placeholder="https://example.com/avatar.jpg"
+                value={defaultImage}
+                style="flex: 1;"
+            />
+            <div 
+                data-avatar-preview
+                style={`width: 40px; height: 40px; border-radius: 50%; overflow: hidden; flex-shrink: 0; border: 1px solid #eee; display: ${defaultImage ? 'block' : 'none'};`}
+            >
+                <img
+                    src={defaultImage}
+                    alt="Preview"
+                    style="width: 100%; height: 100%; object-fit: cover;"
+                    data-avatar-img
+                />
+            </div>
+        </div>
+    </div>
+
+    <div class="ca-error" data-error-message style="display: none;"></div>
+    <div class="ca-success-message" data-success-message style="display: none; padding: 0.75rem; background: #d1fae5; border-radius: 6px; color: #065f46; text-align: center;">
+        Profile updated successfully!
+    </div>
+
+    <button type="submit" class="ca-button" data-submit-button>
+        Save Profile
+    </button>
+</form>
+
+<script>
+import { createClient } from '../../clients/astro-client';
+
+document.querySelectorAll('[data-profile-editor]').forEach((form) => {
+    const baseUrl = form.getAttribute('data-base-url') || undefined;
+    const client = createClient(baseUrl);
+    
+    const submitBtn = form.querySelector('[data-submit-button]') as HTMLButtonElement;
+    const errorDiv = form.querySelector('[data-error-message]') as HTMLDivElement;
+    const successDiv = form.querySelector('[data-success-message]') as HTMLDivElement;
+    const imageInput = form.querySelector('#profile-image') as HTMLInputElement;
+    const avatarPreview = form.querySelector('[data-avatar-preview]') as HTMLDivElement;
+    const avatarImg = form.querySelector('[data-avatar-img]') as HTMLImageElement;
+
+    // Update avatar preview on input change
+    imageInput?.addEventListener('input', () => {
+        const url = imageInput.value;
+        if (url) {
+            avatarImg.src = url;
+            avatarPreview.style.display = 'block';
+            avatarImg.onerror = () => { avatarPreview.style.display = 'none'; };
+        } else {
+            avatarPreview.style.display = 'none';
+        }
+    });
+
+    const showError = (message: string) => {
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+        successDiv.style.display = 'none';
+    };
+
+    const showSuccess = () => {
+        successDiv.style.display = 'block';
+        errorDiv.style.display = 'none';
+    };
+
+    const hideMessages = () => {
+        errorDiv.style.display = 'none';
+        successDiv.style.display = 'none';
+    };
+
+    const setLoading = (loading: boolean) => {
+        submitBtn.disabled = loading;
+        submitBtn.textContent = loading ? 'Saving...' : 'Save Profile';
+    };
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        hideMessages();
+        
+        const formData = new FormData(form as HTMLFormElement);
+        const name = formData.get('name') as string;
+        const image = formData.get('image') as string;
+
+        setLoading(true);
+
+        try {
+            await client.updateUser({ name, image });
+            showSuccess();
+        } catch (err: any) {
+            showError(err.message || 'Failed to update profile');
+        } finally {
+            setLoading(false);
+        }
+    });
+});
+</script>
