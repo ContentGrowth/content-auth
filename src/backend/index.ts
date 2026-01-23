@@ -23,6 +23,13 @@ export interface EmailNormalizationConfig {
     columnName?: string;
 }
 
+export interface SignInTrackingConfig {
+    /** Enable sign-in tracking (lastSignedInAt column). Default: false */
+    enabled: boolean;
+    /** Column name for last sign-in timestamp. Default: 'lastSignedInAt' */
+    columnName?: string;
+}
+
 /**
  * Field attribute for additional fields in custom schema
  */
@@ -125,6 +132,12 @@ export interface AuthConfig {
      */
     emailNormalization?: EmailNormalizationConfig;
     /**
+     * Sign-in tracking to record when users last signed in.
+     * Useful for engagement analytics and identifying inactive users.
+     * Requires a 'lastSignedInAt' column (or custom name) in the users table.
+     */
+    signInTracking?: SignInTrackingConfig;
+    /**
      * Custom schema mapping to use existing tables with Better Auth.
      * Maps Better Auth's default table/column names to your existing database schema.
      * If not provided, uses default table names (users, sessions, accounts, etc.).
@@ -161,6 +174,7 @@ export const createAuth = (config: AuthConfig) => {
         emailVerification,
         turnstile: turnstileConfig,
         emailNormalization,
+        signInTracking,
         schemaMapping,
         user,
         session,
@@ -326,6 +340,22 @@ export const createAuth = (config: AuthConfig) => {
                         ).bind(normalized, user.id, normalized).run();
                     } catch (e: any) {
                         console.error(`[ContentAuth] Failed to set normalized_email: ${e.message}`);
+                    }
+                }
+            }
+
+            // --- Update lastSignedInAt on sign-in ---
+            if (signInTracking?.enabled && rawDb?.prepare && user?.id) {
+                // Track sign-ins (sign-in, sign-up, and OAuth callbacks all create sessions)
+                if (path.includes('/sign-in') || path.includes('/sign-up') || path.includes('/callback')) {
+                    try {
+                        const lastSignedInColumn = signInTracking.columnName || 'lastSignedInAt';
+                        const now = Math.floor(Date.now() / 1000); // Unix timestamp in seconds
+                        await rawDb.prepare(
+                            `UPDATE ${userTableName} SET ${lastSignedInColumn} = ? WHERE ${userIdColumn} = ?`
+                        ).bind(now, user.id).run();
+                    } catch (e: any) {
+                        console.error(`[ContentAuth] Failed to update lastSignedInAt: ${e.message}`);
                     }
                 }
             }

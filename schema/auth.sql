@@ -29,6 +29,8 @@ CREATE TABLE IF NOT EXISTS users (
     updatedAt TIMESTAMP NOT NULL
     -- Optional: For Gmail duplicate prevention (see docs)
     -- normalized_email TEXT
+    -- Optional: Sign-in tracking for engagement analytics
+    -- lastSignedInAt TIMESTAMP  -- Updated on each sign-in
 );
 
 -- Sessions
