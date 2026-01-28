@@ -379,25 +379,18 @@ export const createAuth = (config: AuthConfig) => {
 
                     if (isNewUser) {
                         try {
-                            // Run valid onSignup without awaiting to not block auth flow
-                            const result = onSignup(user);
-                            if (result instanceof Promise) {
-                                result.catch(e => console.error(`[ContentAuth] onSignup hook failed: ${e.message}`));
-                            }
+                            // Await onSignup to ensure it completes, especially for Cloudflare Workers
+                            await onSignup(user);
                         } catch (e: any) {
                             console.error(`[ContentAuth] onSignup hook failed: ${e.message}`);
                         }
                     }
                 }
 
-                // --- Trigger onSignin hook ---
                 if (onSignin) {
                     if (path.includes('/sign-in') || path.includes('/sign-up') || path.includes('/callback')) {
                         try {
-                            const result = onSignin(user);
-                            if (result instanceof Promise) {
-                                result.catch(e => console.error(`[ContentAuth] onSignin hook failed: ${e.message}`));
-                            }
+                            await onSignin(user);
                         } catch (e: any) {
                             console.error(`[ContentAuth] onSignin hook failed: ${e.message}`);
                         }

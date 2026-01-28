@@ -1,6 +1,6 @@
 {
     "name": "@contentgrowth/content-auth",
-    "version": "0.5.4",
+    "version": "0.5.5",
     "description": "Better Auth wrapper with UI components for Cloudflare Workers & Pages. Includes custom schema mapping, Turnstile bot protection, and email normalization.",
     "type": "module",
     "main": "./dist/index.js",
