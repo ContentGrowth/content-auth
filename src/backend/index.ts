@@ -143,6 +143,16 @@ export interface AuthConfig {
      * If not provided, uses default table names (users, sessions, accounts, etc.).
      */
     schemaMapping?: SchemaMapping;
+    /**
+     * Callback triggered when a new user signs up.
+     * This includes email signups and OAuth signups (first time).
+     */
+    onSignup?: (user: any) => Promise<void> | void;
+    /**
+     * Callback triggered when a user signs in.
+     * This triggers on every successful session creation (including signup).
+     */
+    onSignin?: (user: any) => Promise<void> | void;
     // Allow passing other better-auth options
     [key: string]: any;
 }
@@ -175,6 +185,8 @@ export const createAuth = (config: AuthConfig) => {
         turnstile: turnstileConfig,
         emailNormalization,
         signInTracking,
+        onSignup,
+        onSignin,
         schemaMapping,
         user,
         session,
@@ -330,21 +342,73 @@ export const createAuth = (config: AuthConfig) => {
             const user = context.user || context.response?.user || context.data?.user ||
                 (context as any).context?.returned?.user || (context as any).context?.newSession?.user;
 
-            // --- Set normalized_email for new users ---
-            if (emailNormalization?.enabled && rawDb?.prepare) {
-                if ((path.includes('/sign-up') || path.includes('/callback')) && user?.id && user?.email) {
-                    try {
-                        const normalized = normalizeEmail(user.email);
-                        await rawDb.prepare(
-                            `UPDATE ${userTableName} SET ${normalizedEmailColumn} = ? WHERE ${userIdColumn} = ? AND (${normalizedEmailColumn} IS NULL OR ${normalizedEmailColumn} != ?)`
-                        ).bind(normalized, user.id, normalized).run();
-                    } catch (e: any) {
-                        console.error(`[ContentAuth] Failed to set normalized_email: ${e.message}`);
+            if (user) {
+                // --- Set normalized_email for new users ---
+                if (emailNormalization?.enabled && rawDb?.prepare) {
+                    if ((path.includes('/sign-up') || path.includes('/callback')) && user.id && user.email) {
+                        try {
+                            const normalized = normalizeEmail(user.email);
+                            await rawDb.prepare(
+                                `UPDATE ${userTableName} SET ${normalizedEmailColumn} = ? WHERE ${userIdColumn} = ? AND (${normalizedEmailColumn} IS NULL OR ${normalizedEmailColumn} != ?)`
+                            ).bind(normalized, user.id, normalized).run();
+                        } catch (e: any) {
+                            console.error(`[ContentAuth] Failed to set normalized_email: ${e.message}`);
+                        }
+                    }
+                }
+
+                // --- Trigger onSignup hook ---
+                if (onSignup) {
+                    let isNewUser = false;
+                    // Email signup
+                    if (path.includes('/sign-up/email')) {
+                        isNewUser = true;
+                    }
+                    // OAuth callback - check if user was just created
+                    // better-auth doesn't explicitly return isNewUser, so we check createdAt
+                    else if (path.includes('/callback')) {
+                        if (user.createdAt) {
+                            const createdAt = new Date(user.createdAt).getTime();
+                            const now = Date.now();
+                            // If created within last 10 seconds, treat as new user
+                            if (now - createdAt < 10000) {
+                                isNewUser = true;
+                            }
+                        }
+                    }
+
+                    if (isNewUser) {
+                        try {
+                            // Run valid onSignup without awaiting to not block auth flow
+                            const result = onSignup(user);
+                            if (result instanceof Promise) {
+                                result.catch(e => console.error(`[ContentAuth] onSignup hook failed: ${e.message}`));
+                            }
+                        } catch (e: any) {
+                            console.error(`[ContentAuth] onSignup hook failed: ${e.message}`);
+                        }
+                    }
+                }
+
+                // --- Trigger onSignin hook ---
+                if (onSignin) {
+                    if (path.includes('/sign-in') || path.includes('/sign-up') || path.includes('/callback')) {
+                        try {
+                            const result = onSignin(user);
+                            if (result instanceof Promise) {
+                                result.catch(e => console.error(`[ContentAuth] onSignin hook failed: ${e.message}`));
+                            }
+                        } catch (e: any) {
+                            console.error(`[ContentAuth] onSignin hook failed: ${e.message}`);
+                        }
                     }
                 }
             }
 
             // --- Update lastSignedInAt on sign-in ---
+            // Note: sign-up also logs usage as sign-in if we want, but usually separated.
+            // However, better-auth session creation happens here too.
+            // Let's keep existing logic.
             if (signInTracking?.enabled && rawDb?.prepare && user?.id) {
                 // Track sign-ins (sign-in, sign-up, and OAuth callbacks all create sessions)
                 if (path.includes('/sign-in') || path.includes('/sign-up') || path.includes('/callback')) {
