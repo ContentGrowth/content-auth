@@ -29,6 +29,8 @@ interface AuthFormProps {
     signinUrl?: string;
     /** URL to navigate to for signup (if set, navigates instead of switching mode inline) */
     signupUrl?: string;
+    /** Size variant of the form (default: 'default') */
+    size?: 'default' | 'small';
 }
 
 export const AuthForm: React.FC<AuthFormProps> = ({
@@ -50,7 +52,8 @@ export const AuthForm: React.FC<AuthFormProps> = ({
     redirectUrl,
     showName = true,
     signinUrl,
-    signupUrl
+    signupUrl,
+    size = 'default'
 }) => {
     const [isLogin, setIsLogin] = useState(view !== 'signup');
     const [email, setEmail] = useState(defaultEmail);
@@ -200,7 +203,8 @@ export const AuthForm: React.FC<AuthFormProps> = ({
     else if (width === 'wide') widthClass = 'ca-width-wide';
     else widthClass = 'ca-width-default';
 
-    const containerClass = `ca-container ${layout === 'split' ? 'ca-layout-split' : ''} ${widthClass} ${className || ''}`;
+    let sizeClass = size === 'small' ? 'ca-size-small' : '';
+    const containerClass = `ca-container ${layout === 'split' ? 'ca-layout-split' : ''} ${widthClass} ${sizeClass} ${className || ''}`;
 
     const renderTurnstile = () => {
         if (!turnstileEnabled || isLogin) return null;
