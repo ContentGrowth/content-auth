@@ -98,6 +98,12 @@ export interface AuthConfig {
     secret: string;
     baseUrl?: string;
     /**
+     * Enable debug logging to see what config is passed to Better Auth.
+     * Useful for troubleshooting configuration issues.
+     * Default: false
+     */
+    debug?: boolean;
+    /**
      * Explicitly specify the database provider.
      * Defaults to 'sqlite' (which works for D1).
      * Use 'postgres' or 'mysql' if passing a Drizzle instance for those DBs.
@@ -179,6 +185,7 @@ export const createAuth = (config: AuthConfig) => {
         database,
         secret,
         baseUrl,
+        debug = false,
         provider: _,
         useCloudflareNativeHashing = true,
         emailVerification,
@@ -261,6 +268,39 @@ export const createAuth = (config: AuthConfig) => {
     const sessionConfig = buildModelConfig(schemaMapping?.session);
     const accountConfig = buildModelConfig(schemaMapping?.account);
     const verificationConfig = buildModelConfig(schemaMapping?.verification);
+
+    if (debug) {
+        console.log('[ContentAuth-DEBUG] ========================================');
+        console.log('[ContentAuth-DEBUG] Configuration passed to content-auth:');
+        console.log('[ContentAuth-DEBUG] - baseUrl:', baseUrl);
+        console.log('[ContentAuth-DEBUG] - provider:', provider);
+        console.log('[ContentAuth-DEBUG] - useCloudflareNativeHashing:', useCloudflareNativeHashing);
+        console.log('[ContentAuth-DEBUG] - emailVerification:', JSON.stringify(emailVerification || 'not configured'));
+        console.log('[ContentAuth-DEBUG] - turnstile:', turnstileConfig ? 'configured' : 'not configured');
+        console.log('[ContentAuth-DEBUG] - emailNormalization:', JSON.stringify(emailNormalization || 'not configured'));
+        console.log('[ContentAuth-DEBUG] - signInTracking:', JSON.stringify(signInTracking || 'not configured'));
+        console.log('[ContentAuth-DEBUG] - onSignup:', onSignup ? 'provided' : 'not provided');
+        console.log('[ContentAuth-DEBUG] - onSignin:', onSignin ? 'provided' : 'not provided');
+        console.log('[ContentAuth-DEBUG] ========================================');
+        console.log('[ContentAuth-DEBUG] Schema Mapping:');
+        console.log('[ContentAuth-DEBUG] - schemaMapping:', JSON.stringify(schemaMapping, null, 2));
+        console.log('[ContentAuth-DEBUG] ========================================');
+        console.log('[ContentAuth-DEBUG] Direct model configs passed:');
+        console.log('[ContentAuth-DEBUG] - user:', JSON.stringify(user, null, 2));
+        console.log('[ContentAuth-DEBUG] - session:', JSON.stringify(session || 'not provided'));
+        console.log('[ContentAuth-DEBUG] - account:', JSON.stringify(account || 'not provided'));
+        console.log('[ContentAuth-DEBUG] - verification:', JSON.stringify(verification || 'not provided'));
+        console.log('[ContentAuth-DEBUG] - organization:', JSON.stringify(organization || 'not provided'));
+        console.log('[ContentAuth-DEBUG] - member:', JSON.stringify(member || 'not provided'));
+        console.log('[ContentAuth-DEBUG] - invitation:', JSON.stringify(invitation || 'not provided'));
+        console.log('[ContentAuth-DEBUG] ========================================');
+        console.log('[ContentAuth-DEBUG] Built model configs (from schemaMapping):');
+        console.log('[ContentAuth-DEBUG] - userConfig:', JSON.stringify(userConfig, null, 2));
+        console.log('[ContentAuth-DEBUG] - sessionConfig:', JSON.stringify(sessionConfig || 'not built'));
+        console.log('[ContentAuth-DEBUG] - accountConfig:', JSON.stringify(accountConfig || 'not built'));
+        console.log('[ContentAuth-DEBUG] - verificationConfig:', JSON.stringify(verificationConfig || 'not built'));
+        console.log('[ContentAuth-DEBUG] ========================================');
+    }
 
     // Get the user table name for email normalization queries
     const userIdColumn = schemaMapping?.user?.fields?.id || 'id';
@@ -444,6 +484,35 @@ export const createAuth = (config: AuthConfig) => {
         hooks: contentAuthHooks,
         ...otherOptions,
     });
+
+    if (debug) {
+        console.log('[ContentAuth-DEBUG] ========================================');
+        console.log('[ContentAuth-DEBUG] Final config passed to betterAuth():');
+        console.log('[ContentAuth-DEBUG] - baseURL:', baseUrl);
+        console.log('[ContentAuth-DEBUG] - emailAndPassword:', JSON.stringify(emailPasswordOptions));
+        console.log('[ContentAuth-DEBUG] - emailVerification:', emailVerification ? 'passed' : 'not passed');
+        console.log('[ContentAuth-DEBUG] ========================================');
+        console.log('[ContentAuth-DEBUG] Merged model configs passed to betterAuth():');
+        
+        const mergedUserConfig = userConfig || user ? { ...userConfig, ...user } : undefined;
+        console.log('[ContentAuth-DEBUG] - user:', JSON.stringify(mergedUserConfig, null, 2));
+        
+        const mergedSessionConfig = sessionConfig || session ? { ...sessionConfig, ...session } : undefined;
+        console.log('[ContentAuth-DEBUG] - session:', JSON.stringify(mergedSessionConfig || 'not passed'));
+        
+        const mergedAccountConfig = accountConfig || account ? { ...accountConfig, ...account } : undefined;
+        console.log('[ContentAuth-DEBUG] - account:', JSON.stringify(mergedAccountConfig || 'not passed'));
+        
+        const mergedVerificationConfig = verificationConfig || verification ? { ...verificationConfig, ...verification } : undefined;
+        console.log('[ContentAuth-DEBUG] - verification:', JSON.stringify(mergedVerificationConfig || 'not passed'));
+        
+        console.log('[ContentAuth-DEBUG] - organization:', organization ? 'passed' : 'not passed');
+        console.log('[ContentAuth-DEBUG] - member:', member ? 'passed' : 'not passed');
+        console.log('[ContentAuth-DEBUG] - invitation:', invitation ? 'passed' : 'not passed');
+        console.log('[ContentAuth-DEBUG] ========================================');
+        console.log('[ContentAuth-DEBUG] Other options passed to betterAuth():', Object.keys(otherOptions).join(', '));
+        console.log('[ContentAuth-DEBUG] ========================================');
+    }
 
     return auth;
 };
