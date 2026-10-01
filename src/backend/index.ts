@@ -214,14 +214,23 @@ export const createAuth = (config: AuthConfig) => {
     const memberTableName = schemaMapping?.member?.tableName || "members";
     const invitationTableName = schemaMapping?.invitation?.tableName || "invitations";
 
-    // Create table objects (respecting dependency order)
-    const usersTable = defaultSchema.createUsersTable(userTableName, schemaMapping?.user?.fields, schemaMapping?.user?.additionalFields);
-    const organizationsTable = defaultSchema.createOrganizationsTable(orgTableName, schemaMapping?.organization?.fields, schemaMapping?.organization?.additionalFields);
-    const sessionsTable = defaultSchema.createSessionsTable(sessionTableName, usersTable, schemaMapping?.session?.fields, schemaMapping?.session?.additionalFields);
-    const accountsTable = defaultSchema.createAccountsTable(accountTableName, usersTable, schemaMapping?.account?.fields, schemaMapping?.account?.additionalFields);
-    const verificationsTable = defaultSchema.createVerificationsTable(verificationTableName, schemaMapping?.verification?.fields, schemaMapping?.verification?.additionalFields);
-    const membersTable = defaultSchema.createMembersTable(memberTableName, organizationsTable, usersTable, schemaMapping?.member?.fields, schemaMapping?.member?.additionalFields);
-    const invitationsTable = defaultSchema.createInvitationsTable(invitationTableName, organizationsTable, usersTable, schemaMapping?.invitation?.fields, schemaMapping?.invitation?.additionalFields);
+    // Merge additionalFields from both schemaMapping and direct config
+    const mergedUserAdditionalFields = { ...schemaMapping?.user?.additionalFields, ...user?.additionalFields };
+    const mergedSessionAdditionalFields = { ...schemaMapping?.session?.additionalFields, ...session?.additionalFields };
+    const mergedAccountAdditionalFields = { ...schemaMapping?.account?.additionalFields, ...account?.additionalFields };
+    const mergedVerificationAdditionalFields = { ...schemaMapping?.verification?.additionalFields, ...verification?.additionalFields };
+    const mergedOrgAdditionalFields = { ...schemaMapping?.organization?.additionalFields, ...organization?.additionalFields };
+    const mergedMemberAdditionalFields = { ...schemaMapping?.member?.additionalFields, ...member?.additionalFields };
+    const mergedInvitationAdditionalFields = { ...schemaMapping?.invitation?.additionalFields, ...invitation?.additionalFields };
+
+    // Create table objects (respecting dependency order) with merged additionalFields
+    const usersTable = defaultSchema.createUsersTable(userTableName, schemaMapping?.user?.fields, mergedUserAdditionalFields);
+    const organizationsTable = defaultSchema.createOrganizationsTable(orgTableName, schemaMapping?.organization?.fields, mergedOrgAdditionalFields);
+    const sessionsTable = defaultSchema.createSessionsTable(sessionTableName, usersTable, schemaMapping?.session?.fields, mergedSessionAdditionalFields);
+    const accountsTable = defaultSchema.createAccountsTable(accountTableName, usersTable, schemaMapping?.account?.fields, mergedAccountAdditionalFields);
+    const verificationsTable = defaultSchema.createVerificationsTable(verificationTableName, schemaMapping?.verification?.fields, mergedVerificationAdditionalFields);
+    const membersTable = defaultSchema.createMembersTable(memberTableName, organizationsTable, usersTable, schemaMapping?.member?.fields, mergedMemberAdditionalFields);
+    const invitationsTable = defaultSchema.createInvitationsTable(invitationTableName, organizationsTable, usersTable, schemaMapping?.invitation?.fields, mergedInvitationAdditionalFields);
 
     // Determine keys for the schema object (Better Auth uses tableName as modelName if provided)
     const userKey = schemaMapping?.user?.tableName || "user";
@@ -299,6 +308,11 @@ export const createAuth = (config: AuthConfig) => {
         console.log('[ContentAuth-DEBUG] - sessionConfig:', JSON.stringify(sessionConfig || 'not built'));
         console.log('[ContentAuth-DEBUG] - accountConfig:', JSON.stringify(accountConfig || 'not built'));
         console.log('[ContentAuth-DEBUG] - verificationConfig:', JSON.stringify(verificationConfig || 'not built'));
+        console.log('[ContentAuth-DEBUG] ========================================');
+        console.log('[ContentAuth-DEBUG] Merged additionalFields for Drizzle schema:');
+        console.log('[ContentAuth-DEBUG] - user additionalFields:', JSON.stringify(mergedUserAdditionalFields, null, 2));
+        console.log('[ContentAuth-DEBUG] - session additionalFields:', JSON.stringify(mergedSessionAdditionalFields || 'none'));
+        console.log('[ContentAuth-DEBUG] - account additionalFields:', JSON.stringify(mergedAccountAdditionalFields || 'none'));
         console.log('[ContentAuth-DEBUG] ========================================');
     }
 
