@@ -1,7 +1,7 @@
 import { createAuthClient } from "better-auth/react";
 import { organizationClient } from "better-auth/client/plugins";
 
-export interface ClientOptions {
+export interface ContentAuthClientOptions {
     /**
      * Controls whether the session is re-fetched when the browser window
      * regains focus (e.g. lock/unlock screen, switching apps in a PWA).
@@ -16,7 +16,7 @@ export interface ClientOptions {
     refetchOnWindowFocus?: boolean;
 }
 
-export const createClient = (baseUrl?: string, options: ClientOptions = {}) => {
+export const createClient = (baseUrl?: string, options: ContentAuthClientOptions = {}) => {
     const { refetchOnWindowFocus = false } = options;
     return createAuthClient({
         baseURL: baseUrl,
