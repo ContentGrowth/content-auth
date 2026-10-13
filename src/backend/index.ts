@@ -10,6 +10,7 @@ export * from "better-auth";
 // Export utilities for direct use
 export { verifyTurnstile } from "./turnstile";
 export { normalizeEmail, isGmailAddress } from "./email-normalize";
+export { hashPassword, verifyPassword } from "./native-hashing";
 
 export interface TurnstileConfig {
     /** Cloudflare Turnstile secret key */
