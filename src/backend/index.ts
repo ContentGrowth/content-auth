@@ -529,6 +529,67 @@ export const createAuth = (config: AuthConfig) => {
         console.log('[ContentAuth-DEBUG] ========================================');
     }
 
+    // Add helper method to create users programmatically
+    (auth as any).createUser = async (options: {
+        email: string;
+        password: string;
+        name?: string;
+        emailVerified?: boolean;
+    }) => {
+        const { email, password, name, emailVerified = false } = options;
+        
+        // Call Better Auth's sign-up endpoint internally
+        const signupRequest = new Request(`${baseUrl}/api/auth/sign-up/email`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email: email.toLowerCase().trim(),
+                password,
+                name: name || email.split('@')[0],
+                callbackURL: '/',
+            }),
+        });
+        
+        const signupResponse = await auth.handler(signupRequest);
+        
+        if (!signupResponse.ok) {
+            const errorData = await signupResponse.json();
+            throw new Error(`Failed to create user: ${JSON.stringify(errorData)}`);
+        }
+        
+        const signupData = await signupResponse.json();
+        
+        // If emailVerified should be true, update it
+        if (emailVerified && signupData.user?.id && rawDb?.prepare) {
+            await rawDb.prepare(
+                `UPDATE ${userTableName} SET ${userIdColumn === 'id' ? 'emailVerified' : schemaMapping?.user?.fields?.emailVerified || 'emailVerified'} = 1 WHERE ${userIdColumn} = ?`
+            ).bind(signupData.user.id).run();
+        }
+        
+        return signupData.user;
+    };
+
+    // Add helper method to reset user password (admin operation)
+    (auth as any).resetUserPassword = async (userId: string, newPassword: string) => {
+        if (!rawDb?.prepare) {
+            throw new Error('Password reset requires database access');
+        }
+        
+        // Hash the new password using the configured hash function
+        const hashedPassword = await hashPassword(newPassword);
+        
+        // Update the password in the accounts table
+        const accountIdField = schemaMapping?.account?.fields?.userId || 'userId';
+        const passwordField = schemaMapping?.account?.fields?.password || 'password';
+        const updatedAtField = schemaMapping?.account?.fields?.updatedAt || 'updatedAt';
+        
+        await rawDb.prepare(
+            `UPDATE ${accountTableName} SET ${passwordField} = ?, ${updatedAtField} = ? WHERE ${accountIdField} = ? AND providerId = 'credential'`
+        ).bind(hashedPassword, Date.now(), userId).run();
+        
+        return { success: true };
+    };
+
     return auth;
 };
 
