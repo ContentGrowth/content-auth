@@ -553,11 +553,11 @@ export const createAuth = (config: AuthConfig) => {
         const signupResponse = await auth.handler(signupRequest);
         
         if (!signupResponse.ok) {
-            const errorData = await signupResponse.json();
+            const errorData = await signupResponse.json() as any;
             throw new Error(`Failed to create user: ${JSON.stringify(errorData)}`);
         }
         
-        const signupData = await signupResponse.json();
+        const signupData = await signupResponse.json() as any;
         
         // If emailVerified should be true, update it
         if (emailVerified && signupData.user?.id && rawDb?.prepare) {
